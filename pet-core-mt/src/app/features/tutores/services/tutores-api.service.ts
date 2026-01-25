@@ -42,4 +42,12 @@ export class TutoresApiService {
     formData.append('file', file);
     return this.httpHelper.postMultipart<TutorFoto>(`/v1/tutores/${id}/fotos`, formData);
   }
+
+  linkPet(tutorId: number, petId: number): Observable<void> {
+    return this.httpHelper.post<void>(`/v1/tutores/${tutorId}/pets/${petId}`, {});
+  }
+
+  unlinkPet(tutorId: number, petId: number): Observable<void> {
+    return this.httpHelper.delete<void>(`/v1/tutores/${tutorId}/pets/${petId}`);
+  }
 }

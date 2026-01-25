@@ -130,6 +130,24 @@ export class TutoresFacade {
     );
   }
 
+  linkPet(tutorId: number, petId: number): Observable<void> {
+    return this.tutoresApi.linkPet(tutorId, petId).pipe(
+      catchError(error => {
+        const errorMessage = typeof error === 'string' ? error : 'Erro ao vincular pet';
+        return throwError(() => errorMessage);
+      })
+    );
+  }
+
+  unlinkPet(tutorId: number, petId: number): Observable<void> {
+    return this.tutoresApi.unlinkPet(tutorId, petId).pipe(
+      catchError(error => {
+        const errorMessage = typeof error === 'string' ? error : 'Erro ao desvincular pet';
+        return throwError(() => errorMessage);
+      })
+    );
+  }
+
   private updateState(partial: Partial<TutoresState>): void {
     this.stateSubject.next({ ...this.currentState, ...partial });
   }

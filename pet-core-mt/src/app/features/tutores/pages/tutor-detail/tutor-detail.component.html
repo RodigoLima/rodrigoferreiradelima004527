@@ -75,9 +75,10 @@
             }
           </div>
 
-          @if (tutorData.pets && tutorData.pets.length > 0) {
-            <div class="mt-8 pt-6 border-t border-gray-200">
-              <h2 class="text-2xl font-semibold text-gray-900 mb-4">Pets</h2>
+          <div class="mt-8 pt-6 border-t border-gray-200">
+            <h2 class="text-2xl font-semibold text-gray-900 mb-4">Pets</h2>
+            
+            @if (tutorData.pets && tutorData.pets.length > 0) {
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 @for (pet of tutorData.pets; track pet.id) {
                   <div class="p-4 bg-gray-50 rounded-lg">
@@ -95,7 +96,7 @@
                           <span class="font-medium">Raça:</span> {{ pet.raca }}
                         </p>
                         @if (pet.idade !== undefined && pet.idade !== null) {
-                          <p class="text-sm text-gray-600">
+                          <p class="text-sm text-gray-600 mb-3">
                             <span class="font-medium">Idade:</span> {{ pet.idade }} {{ pet.idade === 1 ? 'ano' : 'anos' }}
                           </p>
                         }
@@ -104,8 +105,10 @@
                   </div>
                 }
               </div>
-            </div>
-          }
+            } @else {
+              <p class="text-gray-600">Nenhum pet vinculado ainda.</p>
+            }
+          </div>
         </div>
       </p-card>
     }

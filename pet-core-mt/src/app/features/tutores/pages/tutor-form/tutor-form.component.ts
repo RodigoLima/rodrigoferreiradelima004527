@@ -1,13 +1,16 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { finalize } from 'rxjs';
+import { finalize, Subject, debounce, timer, distinctUntilChanged, takeUntil } from 'rxjs';
 import { TutoresFacade } from '../../services/tutores.facade';
 import { TutorDetail } from '../../models/tutor.models';
+import { PetsFacade } from '../../../pets/services/pets.facade';
+import { Pet } from '../../../pets/models/pet.models';
 import { CardModule } from 'primeng/card';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
+import { DialogModule } from 'primeng/dialog';
 import { PhoneMaskDirective } from '../../../../shared/forms/phone-mask.directive';
 import { CpfMaskDirective } from '../../../../shared/forms/cpf-mask.directive';
 
@@ -20,17 +23,21 @@ import { CpfMaskDirective } from '../../../../shared/forms/cpf-mask.directive';
     CardModule,
     ButtonModule,
     InputTextModule,
+    DialogModule,
     PhoneMaskDirective,
     CpfMaskDirective
   ],
   templateUrl: './tutor-form.component.html',
   styleUrl: './tutor-form.component.scss'
 })
-export class TutorFormComponent implements OnInit {
+export class TutorFormComponent implements OnInit, OnDestroy {
   private fb = inject(FormBuilder);
   private tutoresFacade = inject(TutoresFacade);
+  private petsFacade = inject(PetsFacade);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
+  private destroy$ = new Subject<void>();
+  private searchSubject = new Subject<string>();
 
   tutorForm!: FormGroup;
   isLoading = signal(false);
@@ -39,6 +46,13 @@ export class TutorFormComponent implements OnInit {
   tutorId = signal<number | null>(null);
   selectedFile = signal<File | null>(null);
   previewUrl = signal<string | null>(null);
+  tutorDetail = signal<TutorDetail | null>(null);
+
+  availablePets = signal<Pet[]>([]);
+  petsLoading = signal(false);
+  showLinkDialog = false;
+  searchTermValue = '';
+  linkingPetId = signal<number | null>(null);
 
   ngOnInit(): void {
     this.tutorForm = this.fb.group({
@@ -53,7 +67,30 @@ export class TutorFormComponent implements OnInit {
     if (id) {
       this.tutorId.set(parseInt(id, 10));
       this.loadTutor();
+
+      this.petsFacade.pets$.pipe(takeUntil(this.destroy$)).subscribe(pets => {
+        this.availablePets.set(pets);
+      });
+
+      this.petsFacade.loading$.pipe(takeUntil(this.destroy$)).subscribe(loading => {
+        this.petsLoading.set(loading);
+      });
+
+      this.searchSubject
+        .pipe(
+          debounce(value => timer(value.trim() ? 500 : 0)),
+          distinctUntilChanged(),
+          takeUntil(this.destroy$)
+        )
+        .subscribe(searchValue => {
+          this.petsFacade.searchByName(searchValue);
+        });
     }
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   loadTutor(): void {
@@ -65,6 +102,7 @@ export class TutorFormComponent implements OnInit {
       finalize(() => this.isLoading.set(false))
     ).subscribe({
       next: (tutor: TutorDetail) => {
+        this.tutorDetail.set(tutor);
         this.tutorForm.patchValue({
           nome: tutor.nome,
           telefone: tutor.telefone || '',
@@ -78,6 +116,72 @@ export class TutorFormComponent implements OnInit {
       },
       error: () => {
         this.errorMessage.set('Erro ao carregar dados do tutor');
+      }
+    });
+  }
+
+  openLinkDialog(): void {
+    if (!this.tutorId()) return;
+    this.showLinkDialog = true;
+    this.searchTermValue = '';
+    this.petsFacade.fetchPets({ size: 50 });
+  }
+
+  closeLinkDialog(): void {
+    this.showLinkDialog = false;
+    this.searchTermValue = '';
+  }
+
+  onSearchChange(value: string): void {
+    this.searchTermValue = value;
+    this.searchSubject.next(value);
+  }
+
+  getAvailablePetsForLinking(): Pet[] {
+    const tutor = this.tutorDetail();
+    if (!tutor) return this.availablePets();
+
+    const linkedPetIds = new Set((tutor.pets ?? []).map(p => p.id));
+    return this.availablePets().filter(pet => !linkedPetIds.has(pet.id));
+  }
+
+  linkPet(petId: number): void {
+    const tutorId = this.tutorId();
+    if (!tutorId) return;
+
+    this.linkingPetId.set(petId);
+    this.tutoresFacade.linkPet(tutorId, petId).pipe(
+      finalize(() => {
+        this.linkingPetId.set(null);
+        this.loadTutor();
+      })
+    ).subscribe({
+      next: () => {
+        this.closeLinkDialog();
+      },
+      error: () => {
+        this.errorMessage.set('Erro ao vincular pet');
+      }
+    });
+  }
+
+  unlinkPet(petId: number): void {
+    const tutorId = this.tutorId();
+    if (!tutorId) return;
+
+    if (!confirm('Deseja realmente desvincular este pet?')) {
+      return;
+    }
+
+    this.linkingPetId.set(petId);
+    this.tutoresFacade.unlinkPet(tutorId, petId).pipe(
+      finalize(() => {
+        this.linkingPetId.set(null);
+        this.loadTutor();
+      })
+    ).subscribe({
+      error: () => {
+        this.errorMessage.set('Erro ao desvincular pet');
       }
     });
   }
