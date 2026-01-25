@@ -1,0 +1,44 @@
+# Angular (SPA) / Node
+node_modules/
+dist/
+out-tsc/
+tmp/
+
+# Angular CLI cache
+.angular/
+
+# Tests / coverage
+coverage/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Runtime / OS
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Editor/IDE
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+!.vscode/launch.json
+!.vscode/tasks.json
+.idea/
+*.iml
+
+# Env files (se usar)
+.env
+.env.*
+
+# TypeScript incremental builds
+*.tsbuildinfo
+
+# Misc
+.cache/
