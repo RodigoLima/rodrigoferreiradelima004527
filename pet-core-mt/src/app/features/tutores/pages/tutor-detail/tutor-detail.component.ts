@@ -26,6 +26,8 @@ export class TutorDetailComponent implements OnInit {
   tutor = signal<TutorDetail | null>(null);
   isLoading = signal(false);
   errorMessage = signal<string | null>(null);
+  successMessage = signal<string | null>(null);
+  deleting = signal(false);
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
@@ -57,5 +59,30 @@ export class TutorDetailComponent implements OnInit {
 
   goBack(): void {
     this.router.navigate(['/tutores']);
+  }
+
+  deleteTutor(): void {
+    const tutor = this.tutor();
+    if (!tutor || this.deleting()) return;
+
+    const confirmed = confirm(`Tem certeza que deseja excluir o tutor "${tutor.nome}"? Esta ação não pode ser desfeita.`);
+    if (!confirmed) return;
+
+    this.deleting.set(true);
+    this.errorMessage.set(null);
+    this.successMessage.set(null);
+
+    this.tutoresFacade.deleteTutor(tutor.id).subscribe({
+      next: () => {
+        this.successMessage.set('Tutor excluído com sucesso!');
+        setTimeout(() => {
+          this.router.navigate(['/tutores']);
+        }, 800);
+      },
+      error: (err) => {
+        this.deleting.set(false);
+        this.errorMessage.set(typeof err === 'string' ? err : 'Erro ao excluir tutor');
+      }
+    });
   }
 }

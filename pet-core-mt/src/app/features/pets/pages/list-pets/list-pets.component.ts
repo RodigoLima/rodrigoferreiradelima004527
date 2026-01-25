@@ -34,6 +34,8 @@ export class ListPetsComponent implements OnInit, OnDestroy {
   pets = signal<Pet[]>([]);
   loading = signal(false);
   error = signal<string | null>(null);
+  successMessage = signal<string | null>(null);
+  deletingId = signal<number | null>(null);
   totalPages = signal(0);
   currentPage = signal(0);
   totalElements = signal(0);
@@ -94,6 +96,28 @@ export class ListPetsComponent implements OnInit, OnDestroy {
 
   editPet(id: number): void {
     this.router.navigate(['/pets/editar', id]);
+  }
+
+  deletePet(pet: Pet): void {
+    if (this.deletingId() === pet.id) return;
+
+    const confirmed = confirm(`Tem certeza que deseja excluir o pet "${pet.nome}"? Esta ação não pode ser desfeita.`);
+    if (!confirmed) return;
+
+    this.deletingId.set(pet.id);
+    this.error.set(null);
+    this.successMessage.set(null);
+
+    this.petsFacade.deletePet(pet.id).subscribe({
+      next: () => {
+        this.successMessage.set('Pet excluído com sucesso!');
+        this.deletingId.set(null);
+      },
+      error: (err) => {
+        this.error.set(typeof err === 'string' ? err : 'Erro ao excluir pet');
+        this.deletingId.set(null);
+      }
+    });
   }
 
   createNewPet(): void {

@@ -34,6 +34,8 @@ export class ListTutoresComponent implements OnInit, OnDestroy {
   tutores = signal<Tutor[]>([]);
   loading = signal(false);
   error = signal<string | null>(null);
+  successMessage = signal<string | null>(null);
+  deletingId = signal<number | null>(null);
   totalPages = signal(0);
   currentPage = signal(0);
   totalElements = signal(0);
@@ -94,6 +96,30 @@ export class ListTutoresComponent implements OnInit, OnDestroy {
 
   editTutor(id: number): void {
     this.router.navigate(['/tutores/editar', id]);
+  }
+
+  deleteTutor(tutor: Tutor): void {
+    if (this.deletingId() === tutor.id) return;
+
+    const confirmed = confirm(
+      `Tem certeza que deseja excluir o tutor "${tutor.nome}"? Esta ação não pode ser desfeita.`
+    );
+    if (!confirmed) return;
+
+    this.deletingId.set(tutor.id);
+    this.error.set(null);
+    this.successMessage.set(null);
+
+    this.tutoresFacade.deleteTutor(tutor.id).subscribe({
+      next: () => {
+        this.successMessage.set('Tutor excluído com sucesso!');
+        this.deletingId.set(null);
+      },
+      error: (err) => {
+        this.error.set(typeof err === 'string' ? err : 'Erro ao excluir tutor');
+        this.deletingId.set(null);
+      }
+    });
   }
 
   createNewTutor(): void {

@@ -1,12 +1,11 @@
 import { Routes } from '@angular/router';
-import { HomeComponent } from './pages/home/home.component';
 import { LoginComponent } from './pages/login/login.component';
 import { authGuard } from './core/auth/auth.guard';
 
 export const routes: Routes = [
   {
     path: '',
-    redirectTo: '/home',
+    redirectTo: '/pets',
     pathMatch: 'full'
   },
   {
@@ -14,16 +13,13 @@ export const routes: Routes = [
     component: LoginComponent
   },
   {
-    path: 'home',
-    component: HomeComponent,
+    path: 'pets',
+    loadChildren: () => import('./features/pets/pets.routes').then(m => m.petsRoutes),
     canActivate: [authGuard]
   },
   {
-    path: 'pets',
-    loadChildren: () => import('./features/pets/pets.routes').then(m => m.petsRoutes)
-  },
-  {
     path: 'tutores',
-    loadChildren: () => import('./features/tutores/tutores.routes').then(m => m.tutoresRoutes)
+    loadChildren: () => import('./features/tutores/tutores.routes').then(m => m.tutoresRoutes),
+    canActivate: [authGuard]
   }
 ];

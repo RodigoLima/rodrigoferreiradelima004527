@@ -148,6 +148,18 @@ export class TutoresFacade {
     );
   }
 
+  deleteTutor(id: number): Observable<void> {
+    return this.tutoresApi.deleteTutor(id).pipe(
+      tap(() => {
+        this.fetchTutores(this.currentState.query);
+      }),
+      catchError(error => {
+        const errorMessage = typeof error === 'string' ? error : 'Erro ao excluir tutor';
+        return throwError(() => errorMessage);
+      })
+    );
+  }
+
   private updateState(partial: Partial<TutoresState>): void {
     this.stateSubject.next({ ...this.currentState, ...partial });
   }

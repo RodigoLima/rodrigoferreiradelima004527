@@ -169,6 +169,18 @@ export class PetsFacade {
     );
   }
 
+  deletePet(id: number): Observable<void> {
+    return this.petsApi.deletePet(id).pipe(
+      tap(() => {
+        this.fetchPets(this.currentState.query);
+      }),
+      catchError(error => {
+        const errorMessage = typeof error === 'string' ? error : 'Erro ao excluir pet';
+        throw errorMessage;
+      })
+    );
+  }
+
   private updateState(partial: Partial<PetsState>): void {
     this.stateSubject.next({ ...this.currentState, ...partial });
   }

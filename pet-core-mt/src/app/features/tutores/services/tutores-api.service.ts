@@ -50,4 +50,8 @@ export class TutoresApiService {
   unlinkPet(tutorId: number, petId: number): Observable<void> {
     return this.httpHelper.delete<void>(`/v1/tutores/${tutorId}/pets/${petId}`);
   }
+
+  deleteTutor(id: number): Observable<void> {
+    return this.httpHelper.delete<void>(`/v1/tutores/${id}`);
+  }
 }
