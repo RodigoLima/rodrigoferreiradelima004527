@@ -13,6 +13,20 @@ export interface PetFoto {
   url: string;
 }
 
+export interface Tutor {
+  id: number;
+  nome: string;
+  email?: string;
+  telefone?: string;
+  endereco?: string;
+  cpf?: number;
+  foto?: PetFoto | null;
+}
+
+export interface PetDetail extends Pet {
+  tutores: Tutor[];
+}
+
 export interface PetResponse {
   page: number;
   size: number;

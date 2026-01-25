@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { HttpHelperService } from '../../../core/http/http-helper.service';
-import { PetResponse, PetQuery } from '../models/pet.models';
+import { PetResponse, PetQuery, PetDetail } from '../models/pet.models';
 
 @Injectable({
   providedIn: 'root'
@@ -23,5 +23,9 @@ export class PetsApiService {
     }
 
     return this.httpHelper.get<PetResponse>('/v1/pets', params);
+  }
+
+  getPetById(id: number): Observable<PetDetail> {
+    return this.httpHelper.get<PetDetail>(`/v1/pets/${id}`);
   }
 }

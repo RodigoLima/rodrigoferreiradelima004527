@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { BehaviorSubject, Observable, Subscription, catchError, map, of, tap } from 'rxjs';
 import { PetsApiService } from './pets-api.service';
-import { Pet, PetQuery, PetResponse } from '../models/pet.models';
+import { Pet, PetQuery, PetResponse, PetDetail } from '../models/pet.models';
 
 interface PetsState {
   pets: Pet[];
@@ -12,6 +12,12 @@ interface PetsState {
   pageCount: number;
   currentPage: number;
   pageSize: number;
+}
+
+interface PetDetailState {
+  pet: PetDetail | null;
+  loading: boolean;
+  error: string | null;
 }
 
 const INITIAL_STATE: PetsState = {
@@ -25,6 +31,12 @@ const INITIAL_STATE: PetsState = {
   pageSize: 10
 };
 
+const INITIAL_DETAIL_STATE: PetDetailState = {
+  pet: null,
+  loading: false,
+  error: null
+};
+
 @Injectable({
   providedIn: 'root'
 })
@@ -33,6 +45,9 @@ export class PetsFacade {
 
   private stateSubject = new BehaviorSubject<PetsState>(INITIAL_STATE);
   state$ = this.stateSubject.asObservable();
+
+  private detailStateSubject = new BehaviorSubject<PetDetailState>(INITIAL_DETAIL_STATE);
+  detailState$ = this.detailStateSubject.asObservable();
 
   private activeRequest?: Subscription;
 
@@ -43,6 +58,10 @@ export class PetsFacade {
   pageCount$ = this.state$.pipe(map(state => state.pageCount));
   currentPage$ = this.state$.pipe(map(state => state.currentPage));
   pageSize$ = this.state$.pipe(map(state => state.pageSize));
+
+  petDetail$ = this.detailState$.pipe(map(state => state.pet));
+  petDetailLoading$ = this.detailState$.pipe(map(state => state.loading));
+  petDetailError$ = this.detailState$.pipe(map(state => state.error));
 
   get currentState(): PetsState {
     return this.stateSubject.value;
@@ -83,6 +102,21 @@ export class PetsFacade {
     );
   }
 
+  fetchPetDetail(id: number): Observable<PetDetail> {
+    this.updateDetailState({ loading: true, error: null });
+
+    return this.petsApi.getPetById(id).pipe(
+      tap(pet => {
+        this.updateDetailState({ loading: false, pet });
+      }),
+      catchError(error => {
+        const errorMessage = typeof error === 'string' ? error : 'Erro ao carregar detalhes do pet';
+        this.updateDetailState({ loading: false, error: errorMessage });
+        throw error;
+      })
+    );
+  }
+
   searchByName(nome: string): void {
     const trimmed = nome.trim();
     const query: PetQuery = { nome: trimmed, page: 0, size: 10 };
@@ -96,5 +130,9 @@ export class PetsFacade {
 
   private updateState(partial: Partial<PetsState>): void {
     this.stateSubject.next({ ...this.currentState, ...partial });
+  }
+
+  private updateDetailState(partial: Partial<PetDetailState>): void {
+    this.detailStateSubject.next({ ...this.detailStateSubject.value, ...partial });
   }
 }

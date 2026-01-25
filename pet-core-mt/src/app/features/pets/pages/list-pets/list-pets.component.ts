@@ -86,6 +86,10 @@ export class ListPetsComponent implements OnInit, OnDestroy {
     this.onPageChange(event.page ?? 0);
   }
 
+  viewPetDetail(id: number): void {
+    this.router.navigate(['/pets', id]);
+  }
+
   private updateQueryParams(params: { nome?: string; page?: number }): void {
     const queryParams: Record<string, string | number | null> = {};
 

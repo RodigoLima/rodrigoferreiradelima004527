@@ -32,7 +32,7 @@
     } @else {
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
         @for (pet of pets(); track pet.id) {
-          <p-card [header]="pet.nome" styleClass="h-full overflow-hidden">
+          <p-card [header]="pet.nome" styleClass="h-full overflow-hidden cursor-pointer hover:shadow-lg transition-shadow" (click)="viewPetDetail(pet.id)">
             <ng-template pTemplate="header">
               <div class="w-full h-48 bg-gray-200 flex items-center justify-center overflow-hidden">
                 @if (pet.foto?.url) {
@@ -52,6 +52,10 @@
               @if (pet.idade !== undefined && pet.idade !== null) {
                 <p><span class="font-medium">Idade:</span> {{ pet.idade }} {{ pet.idade === 1 ? 'ano' : 'anos' }}</p>
               }
+            </div>
+
+            <div class="mt-4 flex justify-end">
+              <span class="text-xs text-gray-500">Ver detalhes →</span>
             </div>
           </p-card>
         }
