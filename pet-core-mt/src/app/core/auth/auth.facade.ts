@@ -3,13 +3,14 @@ import { BehaviorSubject, Observable, catchError, map, of, tap, throwError } fro
 import { Router } from '@angular/router';
 import { AuthApiService } from './auth-api.service';
 import { AuthStorageService } from './auth-storage.service';
-import { AuthState, LoginRequest, RefreshTokenResponse } from './models/auth.models';
+import { AuthState, LoginRequest } from './models/auth.models';
 
 const INITIAL_STATE: AuthState = {
   isAuthenticated: false,
   accessToken: null,
   refreshToken: null,
-  expiresAt: null
+  expiresAt: null,
+  refreshExpiresAt: null
 };
 
 @Injectable({
@@ -39,33 +40,52 @@ export class AuthFacade {
   }
 
   private loadInitialState(): AuthState {
+    const now = Date.now();
     const stored = this.storage.load();
     if (!stored) {
       return INITIAL_STATE;
     }
 
-    if (stored.expiresAt && stored.expiresAt < Date.now()) {
+    if (stored.refreshExpiresAt && stored.refreshExpiresAt < now) {
       this.storage.clear();
       return INITIAL_STATE;
     }
 
-    return stored;
+    const accessTokenValid = !!stored.accessToken && !!stored.expiresAt && stored.expiresAt > now;
+    const refreshTokenValid =
+      !!stored.refreshToken && (!stored.refreshExpiresAt || stored.refreshExpiresAt > now);
+
+    return {
+      isAuthenticated: refreshTokenValid,
+      accessToken: accessTokenValid ? stored.accessToken : null,
+      refreshToken: stored.refreshToken ?? null,
+      expiresAt: accessTokenValid ? stored.expiresAt ?? null : null,
+      refreshExpiresAt: stored.refreshExpiresAt ?? null
+    };
   }
 
   login(credentials: LoginRequest): Observable<boolean> {
     return this.authApi.login(credentials).pipe(
       tap(response => {
-        const expiresAt = Date.now() + (response.expiresIn * 1000);
+        const expiresAt = Date.now() + (response.expires_in * 1000);
+        const refreshExpiresAt = Date.now() + (response.refresh_expires_in * 1000);
         const newState: AuthState = {
           isAuthenticated: true,
-          accessToken: response.accessToken,
-          refreshToken: response.refreshToken,
-          expiresAt
+          accessToken: response.access_token,
+          refreshToken: response.refresh_token,
+          expiresAt,
+          refreshExpiresAt
         };
         this.updateState(newState);
       }),
       map(() => true),
       catchError(error => {
+        if (
+          typeof error === 'string' &&
+          (error.toLowerCase().includes('não autorizado') || error.toLowerCase().includes('credenciais'))
+        ) {
+          return throwError(() => 'Usuário ou senha incorretos.');
+        }
         return throwError(() => error);
       })
     );
@@ -76,15 +96,21 @@ export class AuthFacade {
     if (!currentState.refreshToken) {
       return of(false);
     }
+    if (currentState.refreshExpiresAt && currentState.refreshExpiresAt < Date.now()) {
+      this.logout();
+      return of(false);
+    }
 
-    return this.authApi.refreshToken({ refreshToken: currentState.refreshToken }).pipe(
+    return this.authApi.refreshToken(currentState.refreshToken).pipe(
       tap(response => {
-        const expiresAt = Date.now() + (response.expiresIn * 1000);
+        const expiresAt = Date.now() + (response.expires_in * 1000);
+        const refreshExpiresAt = Date.now() + (response.refresh_expires_in * 1000);
         const newState: AuthState = {
           isAuthenticated: true,
-          accessToken: response.accessToken,
-          refreshToken: response.refreshToken,
-          expiresAt
+          accessToken: response.access_token,
+          refreshToken: response.refresh_token,
+          expiresAt,
+          refreshExpiresAt
         };
         this.updateState(newState);
       }),

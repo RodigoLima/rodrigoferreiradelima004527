@@ -25,7 +25,7 @@ export class ErrorHandlerService {
           message = error.error?.message || 'Dados inválidos. Verifique as informações.';
           break;
         case 401:
-          message = 'Não autorizado. Faça login novamente.';
+          message = error.error?.message || 'Não autorizado. Faça login novamente.';
           break;
         case 403:
           message = 'Acesso negado.';

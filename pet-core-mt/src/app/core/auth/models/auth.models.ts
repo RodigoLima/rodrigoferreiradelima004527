@@ -1,22 +1,20 @@
 export interface LoginRequest {
-  email: string;
-  senha: string;
+  username: string;
+  password: string;
 }
 
 export interface LoginResponse {
-  accessToken: string;
-  refreshToken: string;
-  expiresIn: number;
-}
-
-export interface RefreshTokenRequest {
-  refreshToken: string;
+  access_token: string;
+  refresh_token: string;
+  expires_in: number;
+  refresh_expires_in: number;
 }
 
 export interface RefreshTokenResponse {
-  accessToken: string;
-  refreshToken: string;
-  expiresIn: number;
+  access_token: string;
+  refresh_token: string;
+  expires_in: number;
+  refresh_expires_in: number;
 }
 
 export interface AuthState {
@@ -24,4 +22,5 @@ export interface AuthState {
   accessToken: string | null;
   refreshToken: string | null;
   expiresAt: number | null;
+  refreshExpiresAt: number | null;
 }

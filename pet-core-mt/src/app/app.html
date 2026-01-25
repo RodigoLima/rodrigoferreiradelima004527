@@ -8,6 +8,12 @@
         <ul class="nav-links">
           @if (authFacade.isAuthenticated$ | async) {
             <li>
+              <a routerLink="/home" class="btn-ghost">Home</a>
+            </li>
+            <li>
+              <a routerLink="/pets" class="btn-ghost">Pets</a>
+            </li>
+            <li>
               <button type="button" (click)="logout()" class="btn-ghost">
                 Sair
               </button>

@@ -1,12 +1,12 @@
 import { Component, inject } from '@angular/core';
 import { AsyncPipe } from '@angular/common';
-import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
+import { NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router';
 import { map, startWith } from 'rxjs';
 import { AuthFacade } from './core/auth/auth.facade';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, AsyncPipe],
+  imports: [RouterOutlet, RouterLink, AsyncPipe],
   templateUrl: './app.html',
   styleUrl: './app.scss'
 })

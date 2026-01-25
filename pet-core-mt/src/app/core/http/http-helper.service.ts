@@ -40,8 +40,9 @@ export class HttpHelperService {
     );
   }
 
-  put<T>(endpoint: string, body: unknown): Observable<T> {
-    return this.http.put<T>(`${this.config.baseUrl}${endpoint}`, body).pipe(
+  put<T>(endpoint: string, body: unknown, headers?: Record<string, string>): Observable<T> {
+    const options = headers ? { headers } : undefined;
+    return this.http.put<T>(`${this.config.baseUrl}${endpoint}`, body, options).pipe(
       catchError((error) => {
         this.errorHandler.logError(error, `PUT ${endpoint}`);
         return throwError(() => this.errorHandler.handleError(error));

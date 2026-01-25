@@ -17,5 +17,9 @@ export const routes: Routes = [
     path: 'home',
     component: HomeComponent,
     canActivate: [authGuard]
+  },
+  {
+    path: 'pets',
+    loadChildren: () => import('./features/pets/pets.routes').then(m => m.petsRoutes)
   }
 ];
