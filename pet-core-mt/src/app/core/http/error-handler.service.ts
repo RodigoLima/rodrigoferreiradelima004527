@@ -18,6 +18,9 @@ export class ErrorHandlerService {
       console.error(`Erro do servidor [${error.status}]:`, error.error);
 
       switch (error.status) {
+        case 0:
+          message = 'Não foi possível conectar na API. Verifique se ela está rodando e se a URL está correta.';
+          break;
         case 400:
           message = error.error?.message || 'Dados inválidos. Verifique as informações.';
           break;

@@ -1,14 +1,24 @@
 <div class="app-container">
-  <header class="app-header">
-    <nav class="app-nav">
-      <h1 class="app-title">Pet Gerenciador</h1>
-      <ul class="nav-links">
-
-      </ul>
-    </nav>
-  </header>
-
-  <main class="app-main">
+  @if (isLoginRoute$ | async) {
     <router-outlet />
-  </main>
+  } @else {
+    <header class="app-header">
+      <nav class="app-nav">
+        <h1 class="app-title">Pet Gerenciador</h1>
+        <ul class="nav-links">
+          @if (authFacade.isAuthenticated$ | async) {
+            <li>
+              <button type="button" (click)="logout()" class="btn-ghost">
+                Sair
+              </button>
+            </li>
+          }
+        </ul>
+      </nav>
+    </header>
+
+    <main class="app-main">
+      <router-outlet />
+    </main>
+  }
 </div>

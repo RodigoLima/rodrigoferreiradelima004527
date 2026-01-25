@@ -1,12 +1,24 @@
-import { Component, signal } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { Component, inject } from '@angular/core';
+import { AsyncPipe } from '@angular/common';
+import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
+import { map, startWith } from 'rxjs';
+import { AuthFacade } from './core/auth/auth.facade';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet],
+  imports: [RouterOutlet, AsyncPipe],
   templateUrl: './app.html',
   styleUrl: './app.scss'
 })
 export class App {
-  protected readonly title = signal('pet-core-mt');
+  private router = inject(Router);
+  authFacade = inject(AuthFacade);
+  isLoginRoute$ = this.router.events.pipe(
+    startWith(new NavigationEnd(0, this.router.url, this.router.url)),
+    map(() => this.router.url.startsWith('/login'))
+  );
+
+  logout(): void {
+    this.authFacade.logout();
+  }
 }

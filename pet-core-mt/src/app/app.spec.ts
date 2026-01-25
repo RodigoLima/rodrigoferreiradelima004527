@@ -1,10 +1,23 @@
 import { TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
+import { of } from 'rxjs';
 import { App } from './app';
+import { AuthFacade } from './core/auth/auth.facade';
 
 describe('App', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [App],
+      providers: [
+        provideRouter([]),
+        {
+          provide: AuthFacade,
+          useValue: {
+            isAuthenticated$: of(false),
+            logout: () => {}
+          }
+        }
+      ]
     }).compileComponents();
   });
 
@@ -16,6 +29,7 @@ describe('App', () => {
 
   it('should render app title', async () => {
     const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
     await fixture.whenStable();
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.querySelector('h1')?.textContent).toContain('Pet Gerenciador');
