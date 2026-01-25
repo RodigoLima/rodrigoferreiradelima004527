@@ -1,0 +1,177 @@
+<div class="container-responsive py-10">
+  <div class="mb-6">
+    <button
+      pButton
+      label="Voltar"
+      icon="pi pi-arrow-left"
+      (click)="cancel()"
+      class="mb-4"
+    ></button>
+  </div>
+
+  <div class="max-w-2xl mx-auto">
+    <p-card>
+      <ng-template pTemplate="header">
+        <div class="p-4">
+          <h1 class="text-3xl font-bold text-gray-900">
+            {{ tutorId() ? 'Editar Tutor' : 'Novo Tutor' }}
+          </h1>
+        </div>
+      </ng-template>
+
+      @if (errorMessage(); as error) {
+        <div class="mb-4 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700">
+          {{ error }}
+        </div>
+      }
+
+      @if (isLoading() && tutorId()) {
+        <div class="text-center py-12">
+          <p class="text-gray-600">Carregando dados do tutor...</p>
+        </div>
+      } @else {
+        <form [formGroup]="tutorForm" (ngSubmit)="onSubmit()" class="space-y-6">
+          <div class="space-y-2">
+            <label for="nome" class="block text-sm font-medium text-gray-700">
+              Nome Completo <span class="text-red-500">*</span>
+            </label>
+            <input
+              id="nome"
+              type="text"
+              pInputText
+              formControlName="nome"
+              class="w-full"
+              [class.border-red-500]="tutorForm.get('nome')?.invalid && tutorForm.get('nome')?.touched"
+              placeholder="Digite o nome completo"
+            />
+            @if (tutorForm.get('nome')?.invalid && tutorForm.get('nome')?.touched) {
+              <span class="text-sm text-red-600">
+                @if (tutorForm.get('nome')?.errors?.['required']) {
+                  Nome é obrigatório
+                }
+              </span>
+            }
+          </div>
+
+          <div class="space-y-2">
+            <label for="telefone" class="block text-sm font-medium text-gray-700">
+              Telefone <span class="text-red-500">*</span>
+            </label>
+            <input
+              id="telefone"
+              type="text"
+              pInputText
+              formControlName="telefone"
+              appPhoneMask
+              class="w-full"
+              [class.border-red-500]="tutorForm.get('telefone')?.invalid && tutorForm.get('telefone')?.touched"
+              placeholder="(00) 00000-0000"
+              maxlength="15"
+            />
+            @if (tutorForm.get('telefone')?.invalid && tutorForm.get('telefone')?.touched) {
+              <span class="text-sm text-red-600">
+                @if (tutorForm.get('telefone')?.errors?.['required']) {
+                  Telefone é obrigatório
+                }
+              </span>
+            }
+          </div>
+
+          <div class="space-y-2">
+            <label for="email" class="block text-sm font-medium text-gray-700">
+              Email
+            </label>
+            <input
+              id="email"
+              type="email"
+              pInputText
+              formControlName="email"
+              class="w-full"
+              [class.border-red-500]="tutorForm.get('email')?.invalid && tutorForm.get('email')?.touched"
+              placeholder="email@exemplo.com"
+            />
+            @if (tutorForm.get('email')?.invalid && tutorForm.get('email')?.touched) {
+              <span class="text-sm text-red-600">
+                @if (tutorForm.get('email')?.errors?.['email']) {
+                  Email inválido
+                }
+              </span>
+            }
+          </div>
+
+          <div class="space-y-2">
+            <label for="endereco" class="block text-sm font-medium text-gray-700">
+              Endereço
+            </label>
+            <input
+              id="endereco"
+              type="text"
+              pInputText
+              formControlName="endereco"
+              class="w-full"
+              placeholder="Digite o endereço completo"
+            />
+          </div>
+
+          <div class="space-y-2">
+            <label for="cpf" class="block text-sm font-medium text-gray-700">
+              CPF
+            </label>
+            <input
+              id="cpf"
+              type="text"
+              pInputText
+              formControlName="cpf"
+              class="w-full"
+              appCpfMask
+              maxlength="14"
+              inputmode="numeric"
+              placeholder="000.000.000-00"
+            />
+          </div>
+
+          <div class="space-y-2">
+            <label for="foto" class="block text-sm font-medium text-gray-700">
+              Foto
+            </label>
+            <div class="flex flex-col gap-4">
+              @if (previewUrl()) {
+                <div class="w-full h-64 bg-gray-200 rounded-lg overflow-hidden">
+                  <img
+                    [src]="previewUrl()"
+                    alt="Preview"
+                    class="w-full h-64 object-cover"
+                  />
+                </div>
+              }
+              <input
+                id="foto"
+                type="file"
+                accept="image/*"
+                (change)="onFileSelected($event)"
+                class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+              />
+            </div>
+          </div>
+
+          <div class="flex gap-4 justify-end pt-4">
+            <button
+              type="button"
+              pButton
+              label="Cancelar"
+              (click)="cancel()"
+              [disabled]="isLoading() || isUploading()"
+              class="p-button-secondary"
+            ></button>
+            <button
+              type="submit"
+              pButton
+              label="{{ isLoading() || isUploading() ? 'Salvando...' : 'Salvar' }}"
+              [disabled]="tutorForm.invalid || isLoading() || isUploading()"
+            ></button>
+          </div>
+        </form>
+      }
+    </p-card>
+  </div>
+</div>

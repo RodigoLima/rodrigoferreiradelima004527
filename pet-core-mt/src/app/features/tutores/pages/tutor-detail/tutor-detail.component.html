@@ -1,0 +1,113 @@
+<div class="container-responsive py-10">
+  <div class="mb-6">
+    <button
+      pButton
+      label="Voltar"
+      icon="pi pi-arrow-left"
+      (click)="goBack()"
+      class="mb-4"
+    ></button>
+  </div>
+
+  <div class="max-w-4xl mx-auto">
+    @if (isLoading()) {
+      <div class="text-center py-12">
+        <p class="text-gray-600">Carregando dados do tutor...</p>
+      </div>
+    } @else if (errorMessage(); as error) {
+      <div class="p-4 bg-red-50 border border-red-200 rounded-xl text-red-700">
+        {{ error }}
+      </div>
+    } @else if (tutor(); as tutorData) {
+      <p-card>
+        <ng-template pTemplate="header">
+          <div class="p-4 flex justify-between items-center">
+            <h1 class="text-3xl font-bold text-gray-900">{{ tutorData.nome }}</h1>
+            <button
+              pButton
+              label="Editar"
+              icon="pi pi-pencil"
+              (click)="editTutor()"
+            ></button>
+          </div>
+        </ng-template>
+
+        <div class="space-y-6">
+          @if (tutorData.foto?.url) {
+            <div class="flex justify-center">
+              <div class="w-64 h-64 bg-gray-200 rounded-lg overflow-hidden">
+                <img
+                  [src]="tutorData.foto!.url"
+                  [alt]="tutorData.nome"
+                  class="w-full h-full object-cover"
+                />
+              </div>
+            </div>
+          }
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            @if (tutorData.telefone) {
+              <div>
+                <span class="font-medium text-gray-700">Telefone:</span>
+                <p class="text-gray-900">{{ tutorData.telefone }}</p>
+              </div>
+            }
+
+            @if (tutorData.email) {
+              <div>
+                <span class="font-medium text-gray-700">Email:</span>
+                <p class="text-gray-900">{{ tutorData.email }}</p>
+              </div>
+            }
+
+            @if (tutorData.endereco) {
+              <div class="md:col-span-2">
+                <span class="font-medium text-gray-700">Endereço:</span>
+                <p class="text-gray-900">{{ tutorData.endereco }}</p>
+              </div>
+            }
+
+            @if (tutorData.cpf) {
+              <div>
+                <span class="font-medium text-gray-700">CPF:</span>
+                <p class="text-gray-900">{{ tutorData.cpf }}</p>
+              </div>
+            }
+          </div>
+
+          @if (tutorData.pets && tutorData.pets.length > 0) {
+            <div class="mt-8 pt-6 border-t border-gray-200">
+              <h2 class="text-2xl font-semibold text-gray-900 mb-4">Pets</h2>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                @for (pet of tutorData.pets; track pet.id) {
+                  <div class="p-4 bg-gray-50 rounded-lg">
+                    <div class="flex items-start gap-4">
+                      @if (pet.foto?.url) {
+                        <img
+                          [src]="pet.foto?.url"
+                          [alt]="pet.nome"
+                          class="w-16 h-16 rounded-full object-cover"
+                        />
+                      }
+                      <div class="flex-1">
+                        <h3 class="font-semibold text-gray-900 mb-2">{{ pet.nome }}</h3>
+                        <p class="text-sm text-gray-600 mb-1">
+                          <span class="font-medium">Raça:</span> {{ pet.raca }}
+                        </p>
+                        @if (pet.idade !== undefined && pet.idade !== null) {
+                          <p class="text-sm text-gray-600">
+                            <span class="font-medium">Idade:</span> {{ pet.idade }} {{ pet.idade === 1 ? 'ano' : 'anos' }}
+                          </p>
+                        }
+                      </div>
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      </p-card>
+    }
+  </div>
+</div>

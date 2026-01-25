@@ -1,0 +1,194 @@
+import { Component, OnInit, inject, signal } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
+import { finalize } from 'rxjs';
+import { TutoresFacade } from '../../services/tutores.facade';
+import { TutorDetail } from '../../models/tutor.models';
+import { CardModule } from 'primeng/card';
+import { ButtonModule } from 'primeng/button';
+import { InputTextModule } from 'primeng/inputtext';
+import { PhoneMaskDirective } from '../../../../shared/forms/phone-mask.directive';
+import { CpfMaskDirective } from '../../../../shared/forms/cpf-mask.directive';
+
+@Component({
+  selector: 'app-tutor-form',
+  standalone: true,
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    CardModule,
+    ButtonModule,
+    InputTextModule,
+    PhoneMaskDirective,
+    CpfMaskDirective
+  ],
+  templateUrl: './tutor-form.component.html',
+  styleUrl: './tutor-form.component.scss'
+})
+export class TutorFormComponent implements OnInit {
+  private fb = inject(FormBuilder);
+  private tutoresFacade = inject(TutoresFacade);
+  private router = inject(Router);
+  private route = inject(ActivatedRoute);
+
+  tutorForm!: FormGroup;
+  isLoading = signal(false);
+  isUploading = signal(false);
+  errorMessage = signal<string | null>(null);
+  tutorId = signal<number | null>(null);
+  selectedFile = signal<File | null>(null);
+  previewUrl = signal<string | null>(null);
+
+  ngOnInit(): void {
+    this.tutorForm = this.fb.group({
+      nome: ['', [Validators.required]],
+      telefone: ['', [Validators.required]],
+      email: ['', [Validators.email]],
+      endereco: [''],
+      cpf: ['']
+    });
+
+    const id = this.route.snapshot.paramMap.get('id');
+    if (id) {
+      this.tutorId.set(parseInt(id, 10));
+      this.loadTutor();
+    }
+  }
+
+  loadTutor(): void {
+    const id = this.tutorId();
+    if (!id) return;
+
+    this.isLoading.set(true);
+    this.tutoresFacade.fetchTutorDetail(id).pipe(
+      finalize(() => this.isLoading.set(false))
+    ).subscribe({
+      next: (tutor: TutorDetail) => {
+        this.tutorForm.patchValue({
+          nome: tutor.nome,
+          telefone: tutor.telefone || '',
+          email: tutor.email || '',
+          endereco: tutor.endereco || '',
+          cpf: tutor.cpf ? this.formatCpf(tutor.cpf) : ''
+        });
+        if (tutor.foto?.url) {
+          this.previewUrl.set(tutor.foto.url);
+        }
+      },
+      error: () => {
+        this.errorMessage.set('Erro ao carregar dados do tutor');
+      }
+    });
+  }
+
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      const file = input.files[0];
+      this.selectedFile.set(file);
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        this.previewUrl.set(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+
+  onSubmit(): void {
+    if (this.tutorForm.invalid) {
+      this.markFormGroupTouched(this.tutorForm);
+      return;
+    }
+
+    this.isLoading.set(true);
+    this.errorMessage.set(null);
+
+    const formValue = this.tutorForm.value;
+    const cpfDigits = String(formValue.cpf ?? '').replace(/\D/g, '');
+    const tutorData = {
+      nome: formValue.nome.trim(),
+      telefone: formValue.telefone.replace(/\D/g, ''),
+      email: formValue.email?.trim() || undefined,
+      endereco: formValue.endereco?.trim() || undefined,
+      cpf: cpfDigits.length > 0 ? Number(cpfDigits) : undefined
+    };
+    const id = this.tutorId();
+
+    const operation = id
+      ? this.tutoresFacade.updateTutor(id, tutorData)
+      : this.tutoresFacade.createTutor(tutorData);
+
+    operation.pipe(
+      finalize(() => this.isLoading.set(false))
+    ).subscribe({
+      next: (tutor) => {
+        const tutorIdToUse = id || tutor.id;
+        if (this.selectedFile()) {
+          this.uploadPhoto(tutorIdToUse);
+        } else {
+          this.router.navigate(['/tutores', tutorIdToUse]);
+        }
+      },
+      error: (error: unknown) => {
+        this.errorMessage.set(
+          typeof error === 'string' && error.trim().length > 0
+            ? error
+            : 'Erro ao salvar tutor. Verifique os dados e tente novamente.'
+        );
+      }
+    });
+  }
+
+  uploadPhoto(tutorId: number): void {
+    const file = this.selectedFile();
+    if (!file) {
+      this.router.navigate(['/tutores', tutorId]);
+      return;
+    }
+
+    this.isUploading.set(true);
+    this.tutoresFacade.uploadTutorPhoto(tutorId, file).pipe(
+      finalize(() => this.isUploading.set(false))
+    ).subscribe({
+      next: () => {
+        this.router.navigate(['/tutores', tutorId]);
+      },
+      error: (error: unknown) => {
+        this.errorMessage.set(
+          typeof error === 'string' && error.trim().length > 0
+            ? error
+            : 'Tutor salvo, mas houve erro ao fazer upload da foto.'
+        );
+        setTimeout(() => {
+          this.router.navigate(['/tutores', tutorId]);
+        }, 2000);
+      }
+    });
+  }
+
+  cancel(): void {
+    const id = this.tutorId();
+    if (id) {
+      this.router.navigate(['/tutores', id]);
+    } else {
+      this.router.navigate(['/tutores']);
+    }
+  }
+
+  private markFormGroupTouched(formGroup: FormGroup): void {
+    Object.keys(formGroup.controls).forEach(key => {
+      const control = formGroup.get(key);
+      control?.markAsTouched();
+    });
+  }
+
+  private formatCpf(value: number | string): string {
+    const digits = String(value).replace(/\D/g, '').slice(0, 11);
+    if (digits.length <= 3) return digits;
+    if (digits.length <= 6) return `${digits.slice(0, 3)}.${digits.slice(3)}`;
+    if (digits.length <= 9) return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6)}`;
+    return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9, 11)}`;
+  }
+}
