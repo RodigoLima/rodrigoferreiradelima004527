@@ -6,6 +6,7 @@ import { debounce, distinctUntilChanged, Subject, takeUntil, timer } from 'rxjs'
 import { PetsFacade } from '../../services/pets.facade';
 import { Pet } from '../../models/pet.models';
 import { CardModule } from 'primeng/card';
+import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { PaginatorModule, PaginatorState } from 'primeng/paginator';
 
@@ -16,6 +17,7 @@ import { PaginatorModule, PaginatorState } from 'primeng/paginator';
     CommonModule,
     FormsModule,
     CardModule,
+    ButtonModule,
     InputTextModule,
     PaginatorModule
   ],
@@ -88,6 +90,14 @@ export class ListPetsComponent implements OnInit, OnDestroy {
 
   viewPetDetail(id: number): void {
     this.router.navigate(['/pets', id]);
+  }
+
+  editPet(id: number): void {
+    this.router.navigate(['/pets/editar', id]);
+  }
+
+  createNewPet(): void {
+    this.router.navigate(['/pets/novo']);
   }
 
   private updateQueryParams(params: { nome?: string; page?: number }): void {

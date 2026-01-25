@@ -38,8 +38,15 @@
           </ng-template>
 
           <div class="space-y-6">
-            <div>
-              <h1 class="text-4xl font-bold text-gray-900 mb-2">{{ petData.nome }}</h1>
+            <div class="flex items-center justify-between gap-3">
+              <h1 class="text-4xl font-bold text-gray-900 mb-0">{{ petData.nome }}</h1>
+              <button
+                pButton
+                label="Editar"
+                icon="pi pi-pencil"
+                (click)="editPet()"
+                class="p-button-sm"
+              ></button>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">

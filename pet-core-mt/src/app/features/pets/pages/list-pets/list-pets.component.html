@@ -1,6 +1,14 @@
 <div class="container-responsive py-10">
   <div class="mb-6">
-    <h1 class="text-3xl font-semibold text-gray-900 mb-6">Pets</h1>
+    <div class="flex justify-between items-center mb-6">
+      <h1 class="text-3xl font-semibold text-gray-900">Pets</h1>
+      <button
+        pButton
+        label="Novo Pet"
+        icon="pi pi-plus"
+        (click)="createNewPet()"
+      ></button>
+    </div>
 
     <div class="mb-6">
       <input
@@ -32,7 +40,7 @@
     } @else {
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
         @for (pet of pets(); track pet.id) {
-          <p-card [header]="pet.nome" styleClass="h-full overflow-hidden cursor-pointer border border-transparent transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:border-gray-200 hover:bg-gray-50/40" (click)="viewPetDetail(pet.id)">
+          <p-card [header]="pet.nome" styleClass="h-full overflow-hidden border border-transparent transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:border-gray-200 hover:bg-gray-50/40">
             <ng-template pTemplate="header">
               <div class="w-full h-48 bg-gray-200 flex items-center justify-center overflow-hidden">
                 @if (pet.foto?.url) {
@@ -54,8 +62,21 @@
               }
             </div>
 
-            <div class="mt-4 flex justify-end">
-              <span class="text-xs text-gray-500">Ver detalhes →</span>
+            <div class="mt-4 flex items-center justify-between">
+              <button
+                pButton
+                label="Editar"
+                icon="pi pi-pencil"
+                class="p-button-text p-button-sm"
+                (click)="editPet(pet.id)"
+              ></button>
+              <button
+                pButton
+                label="Detalhes"
+                icon="pi pi-eye"
+                class="p-button-text p-button-sm"
+                (click)="viewPetDetail(pet.id)"
+              ></button>
             </div>
           </p-card>
         }

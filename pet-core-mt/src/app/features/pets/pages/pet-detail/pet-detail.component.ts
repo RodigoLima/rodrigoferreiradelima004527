@@ -49,4 +49,11 @@ export class PetDetailComponent implements OnInit, OnDestroy {
   goBack(): void {
     this.router.navigate(['/pets']);
   }
+
+  editPet(): void {
+    const pet = this.pet();
+    if (pet) {
+      this.router.navigate(['/pets/editar', pet.id]);
+    }
+  }
 }

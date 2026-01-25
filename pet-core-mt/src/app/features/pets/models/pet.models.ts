@@ -40,3 +40,9 @@ export interface PetQuery {
   page?: number;
   size?: number;
 }
+
+export interface PetRequest {
+  nome: string;
+  raca: string;
+  idade?: number;
+}

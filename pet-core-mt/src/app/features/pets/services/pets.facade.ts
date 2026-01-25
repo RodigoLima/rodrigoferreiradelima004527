@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { BehaviorSubject, Observable, Subscription, catchError, map, of, tap } from 'rxjs';
 import { PetsApiService } from './pets-api.service';
-import { Pet, PetQuery, PetResponse, PetDetail } from '../models/pet.models';
+import { Pet, PetQuery, PetResponse, PetDetail, PetRequest, PetFoto } from '../models/pet.models';
 
 interface PetsState {
   pets: Pet[];
@@ -126,6 +126,47 @@ export class PetsFacade {
   goToPage(page: number): void {
     const query = { ...this.currentState.query, page };
     this.fetchPets(query);
+  }
+
+  createPet(pet: PetRequest): Observable<Pet> {
+    return this.petsApi.createPet(pet).pipe(
+      tap(() => {
+        this.fetchPets(this.currentState.query);
+      }),
+      catchError(error => {
+        const errorMessage = typeof error === 'string' ? error : 'Erro ao criar pet';
+        throw errorMessage;
+      })
+    );
+  }
+
+  updatePet(id: number, pet: PetRequest): Observable<Pet> {
+    return this.petsApi.updatePet(id, pet).pipe(
+      tap(() => {
+        this.fetchPets(this.currentState.query);
+        if (this.detailStateSubject.value.pet?.id === id) {
+          this.fetchPetDetail(id).subscribe();
+        }
+      }),
+      catchError(error => {
+        const errorMessage = typeof error === 'string' ? error : 'Erro ao atualizar pet';
+        throw errorMessage;
+      })
+    );
+  }
+
+  uploadPetPhoto(id: number, file: File): Observable<PetFoto> {
+    return this.petsApi.uploadPetPhoto(id, file).pipe(
+      tap(() => {
+        if (this.detailStateSubject.value.pet?.id === id) {
+          this.fetchPetDetail(id).subscribe();
+        }
+      }),
+      catchError(error => {
+        const errorMessage = typeof error === 'string' ? error : 'Erro ao fazer upload da foto';
+        throw errorMessage;
+      })
+    );
   }
 
   private updateState(partial: Partial<PetsState>): void {
