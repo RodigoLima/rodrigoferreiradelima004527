@@ -36,6 +36,7 @@
     "@angular/build": "^21.1.1",
     "@angular/cli": "^21.1.1",
     "@angular/compiler-cli": "^21.1.0",
+    "@tailwindcss/postcss": "^4.1.18",
     "autoprefixer": "^10.4.23",
     "jsdom": "^27.1.0",
     "postcss": "^8.5.6",
