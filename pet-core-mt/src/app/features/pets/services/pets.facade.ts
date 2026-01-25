@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { BehaviorSubject, Observable, catchError, map, of, tap } from 'rxjs';
+import { BehaviorSubject, Observable, Subscription, catchError, map, of, tap } from 'rxjs';
 import { PetsApiService } from './pets-api.service';
 import { Pet, PetQuery, PetResponse } from '../models/pet.models';
 
@@ -34,6 +34,8 @@ export class PetsFacade {
   private stateSubject = new BehaviorSubject<PetsState>(INITIAL_STATE);
   state$ = this.stateSubject.asObservable();
 
+  private activeRequest?: Subscription;
+
   pets$ = this.state$.pipe(map(state => state.pets));
   loading$ = this.state$.pipe(map(state => state.loading));
   error$ = this.state$.pipe(map(state => state.error));
@@ -46,8 +48,13 @@ export class PetsFacade {
     return this.stateSubject.value;
   }
 
+  fetchPets(query: PetQuery = {}): void {
+    this.activeRequest?.unsubscribe();
+    this.activeRequest = this.loadPets(query).subscribe();
+  }
+
   loadPets(query: PetQuery = {}): Observable<PetResponse> {
-    const currentQuery = { ...this.currentState.query, ...query };
+    const currentQuery: PetQuery = { page: 0, size: 10, ...query };
 
     this.updateState({ loading: true, error: null, query: currentQuery });
 
@@ -65,19 +72,26 @@ export class PetsFacade {
       catchError(error => {
         const errorMessage = typeof error === 'string' ? error : 'Erro ao carregar pets';
         this.updateState({ loading: false, error: errorMessage });
-        return of({ page: 0, size: 10, total: 0, pageCount: 0, content: [] } as PetResponse);
+        return of({
+          page: currentQuery.page ?? 0,
+          size: currentQuery.size ?? 10,
+          total: 0,
+          pageCount: 0,
+          content: []
+        } as PetResponse);
       })
     );
   }
 
   searchByName(nome: string): void {
-    const query = nome.trim() ? { nome: nome.trim(), page: 0, size: 10 } : { page: 0, size: 10 };
-    this.loadPets(query).subscribe();
+    const trimmed = nome.trim();
+    const query: PetQuery = { nome: trimmed, page: 0, size: 10 };
+    this.fetchPets(query);
   }
 
   goToPage(page: number): void {
     const query = { ...this.currentState.query, page };
-    this.loadPets(query).subscribe();
+    this.fetchPets(query);
   }
 
   private updateState(partial: Partial<PetsState>): void {

@@ -2,13 +2,23 @@ import { Component, OnInit, OnDestroy, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { debounceTime, distinctUntilChanged, Subject, takeUntil } from 'rxjs';
+import { debounce, distinctUntilChanged, Subject, takeUntil, timer } from 'rxjs';
 import { PetsFacade } from '../../services/pets.facade';
+import { Pet } from '../../models/pet.models';
+import { CardModule } from 'primeng/card';
+import { InputTextModule } from 'primeng/inputtext';
+import { PaginatorModule, PaginatorState } from 'primeng/paginator';
 
 @Component({
   selector: 'app-list-pets',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [
+    CommonModule,
+    FormsModule,
+    CardModule,
+    InputTextModule,
+    PaginatorModule
+  ],
   templateUrl: './list-pets.component.html',
   styleUrl: './list-pets.component.scss'
 })
@@ -19,16 +29,23 @@ export class ListPetsComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
   private searchSubject = new Subject<string>();
 
-  pets$ = this.petsFacade.pets$;
-  loading$ = this.petsFacade.loading$;
-  error$ = this.petsFacade.error$;
-  totalPages$ = this.petsFacade.pageCount$;
-  currentPage$ = this.petsFacade.currentPage$;
-  totalElements$ = this.petsFacade.total$;
+  pets = signal<Pet[]>([]);
+  loading = signal(false);
+  error = signal<string | null>(null);
+  totalPages = signal(0);
+  currentPage = signal(0);
+  totalElements = signal(0);
 
   searchTerm = signal('');
 
   ngOnInit(): void {
+    this.petsFacade.pets$.pipe(takeUntil(this.destroy$)).subscribe(pets => this.pets.set(pets));
+    this.petsFacade.loading$.pipe(takeUntil(this.destroy$)).subscribe(v => this.loading.set(v));
+    this.petsFacade.error$.pipe(takeUntil(this.destroy$)).subscribe(v => this.error.set(v));
+    this.petsFacade.pageCount$.pipe(takeUntil(this.destroy$)).subscribe(v => this.totalPages.set(v));
+    this.petsFacade.currentPage$.pipe(takeUntil(this.destroy$)).subscribe(v => this.currentPage.set(v));
+    this.petsFacade.total$.pipe(takeUntil(this.destroy$)).subscribe(v => this.totalElements.set(v));
+
     const nome = this.route.snapshot.queryParams['nome'] || '';
     const page = parseInt(this.route.snapshot.queryParams['page'] || '0', 10);
 
@@ -36,16 +53,16 @@ export class ListPetsComponent implements OnInit, OnDestroy {
       this.searchTerm.set(nome);
     }
 
-    this.petsFacade.loadPets({ nome: nome || undefined, page, size: 10 }).subscribe();
+    this.petsFacade.fetchPets({ nome: nome || undefined, page, size: 10 });
 
     this.searchSubject
       .pipe(
-        debounceTime(500),
+        debounce(value => timer(value.trim() ? 500 : 0)),
         distinctUntilChanged(),
         takeUntil(this.destroy$)
       )
       .subscribe(searchValue => {
-        this.updateQueryParams({ nome: searchValue || undefined, page: 0 });
+        this.updateQueryParams({ nome: searchValue, page: 0 });
         this.petsFacade.searchByName(searchValue);
       });
   }
@@ -63,6 +80,10 @@ export class ListPetsComponent implements OnInit, OnDestroy {
   onPageChange(page: number): void {
     this.updateQueryParams({ page });
     this.petsFacade.goToPage(page);
+  }
+
+  onPaginatorChange(event: PaginatorState): void {
+    this.onPageChange(event.page ?? 0);
   }
 
   private updateQueryParams(params: { nome?: string; page?: number }): void {
