@@ -9,14 +9,31 @@
     </div>
 
     <div class="toolbar mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
-      <input
-        type="text"
-        pInputText
-        [value]="searchTerm()"
-        (input)="onSearchChange($any($event.target).value)"
-        placeholder="Buscar por nome..."
-        class="w-full sm:max-w-md"
-      />
+      <div class="w-full sm:max-w-xs">
+        <label for="busca-nome" class="mb-1 block text-sm font-medium text-gray-700">Nome</label>
+        <input
+          id="busca-nome"
+          type="text"
+          pInputText
+          class="p-inputtext-sm w-full"
+          [value]="searchNome()"
+          (input)="onSearchNomeChange($any($event.target).value)"
+          placeholder="Buscar por nome..."
+        />
+      </div>
+
+      <div class="w-full sm:max-w-xs">
+        <label for="busca-raca" class="mb-1 block text-sm font-medium text-gray-700">Raça</label>
+        <input
+          id="busca-raca"
+          type="text"
+          pInputText
+          class="p-inputtext-sm w-full"
+          [value]="searchRaca()"
+          (input)="onSearchRacaChange($any($event.target).value)"
+          placeholder="Buscar por raça..."
+        />
+      </div>
     </div>
   </div>
 

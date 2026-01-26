@@ -117,10 +117,24 @@ export class PetsFacade {
     );
   }
 
+  search(filters: { nome: string; raca: string }): void {
+    const nome = filters.nome.trim();
+    const raca = filters.raca.trim();
+    const query: PetQuery = { page: 0, size: 10 };
+
+    if (nome) {
+      query.nome = nome;
+    }
+    if (raca) {
+      query.raca = raca;
+    }
+
+    this.fetchPets(query);
+  }
+
   searchByName(nome: string): void {
     const trimmed = nome.trim();
-    const query: PetQuery = { nome: trimmed, page: 0, size: 10 };
-    this.fetchPets(query);
+    this.search({ nome: trimmed, raca: '' });
   }
 
   goToPage(page: number): void {

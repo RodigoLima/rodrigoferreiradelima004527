@@ -17,7 +17,7 @@ describe('ListPetsComponent', () => {
         ConfirmationService,
         MessageService,
         { provide: Router, useValue: { navigate: vi.fn() } },
-        { provide: ActivatedRoute, useValue: { snapshot: { queryParams: { nome: 'Rex', page: '2' } } } },
+        { provide: ActivatedRoute, useValue: { snapshot: { queryParams: { nome: 'Rex', raca: 'Poodle', page: '2' } } } },
         {
           provide: PetsFacade,
           useValue: {
@@ -28,7 +28,7 @@ describe('ListPetsComponent', () => {
             currentPage$: of(0),
             total$: of(0),
             fetchPets,
-            searchByName: vi.fn(),
+            search: vi.fn(),
             goToPage: vi.fn(),
             deletePet: vi.fn()
           }
@@ -40,7 +40,7 @@ describe('ListPetsComponent', () => {
     fixture.detectChanges();
 
     expect(fixture.componentInstance).toBeTruthy();
-    expect(fetchPets).toHaveBeenCalledWith({ nome: 'Rex', page: 2, size: 10 });
+    expect(fetchPets).toHaveBeenCalledWith({ nome: 'Rex', raca: 'Poodle', page: 2, size: 10 });
   });
 });
 

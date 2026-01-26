@@ -15,6 +15,9 @@ export class PetsApiService {
     if (query.nome) {
       params['nome'] = query.nome;
     }
+    if (query.raca) {
+      params['raca'] = query.raca;
+    }
     if (query.page !== undefined) {
       params['page'] = query.page;
     }

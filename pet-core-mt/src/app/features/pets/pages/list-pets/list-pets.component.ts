@@ -2,9 +2,9 @@ import { Component, OnInit, OnDestroy, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { debounce, distinctUntilChanged, Subject, takeUntil, timer } from 'rxjs';
+import { debounce, distinctUntilChanged, map, Subject, takeUntil, timer } from 'rxjs';
 import { PetsFacade } from '../../services/pets.facade';
-import { Pet } from '../../models/pet.models';
+import { Pet, PetQuery } from '../../models/pet.models';
 import { CardModule } from 'primeng/card';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
@@ -32,7 +32,7 @@ export class ListPetsComponent implements OnInit, OnDestroy {
   private confirmationService = inject(ConfirmationService);
   private messageService = inject(MessageService);
   private destroy$ = new Subject<void>();
-  private searchSubject = new Subject<string>();
+  private searchSubject = new Subject<{ nome: string; raca: string }>();
 
   pets = signal<Pet[]>([]);
   loading = signal(false);
@@ -41,7 +41,8 @@ export class ListPetsComponent implements OnInit, OnDestroy {
   currentPage = signal(0);
   totalElements = signal(0);
 
-  searchTerm = signal('');
+  searchNome = signal('');
+  searchRaca = signal('');
 
   ngOnInit(): void {
     this.petsFacade.pets$.pipe(takeUntil(this.destroy$)).subscribe(pets => this.pets.set(pets));
@@ -57,23 +58,36 @@ export class ListPetsComponent implements OnInit, OnDestroy {
     this.petsFacade.total$.pipe(takeUntil(this.destroy$)).subscribe(v => this.totalElements.set(v));
 
     const nome = this.route.snapshot.queryParams['nome'] || '';
+    const raca = this.route.snapshot.queryParams['raca'] || '';
     const page = parseInt(this.route.snapshot.queryParams['page'] || '0', 10);
 
     if (nome) {
-      this.searchTerm.set(nome);
+      this.searchNome.set(nome);
+    }
+    if (raca) {
+      this.searchRaca.set(raca);
     }
 
-    this.petsFacade.fetchPets({ nome: nome || undefined, page, size: 10 });
+    const query: PetQuery = { page, size: 10 };
+    if (nome) {
+      query.nome = nome;
+    }
+    if (raca) {
+      query.raca = raca;
+    }
+
+    this.petsFacade.fetchPets(query);
 
     this.searchSubject
       .pipe(
-        debounce(value => timer(value.trim() ? 500 : 0)),
-        distinctUntilChanged(),
+        map(v => ({ nome: v.nome.trim(), raca: v.raca.trim() })),
+        debounce(value => timer(value.nome || value.raca ? 500 : 0)),
+        distinctUntilChanged((a, b) => a.nome === b.nome && a.raca === b.raca),
         takeUntil(this.destroy$)
       )
       .subscribe(searchValue => {
-        this.updateQueryParams({ nome: searchValue, page: 0 });
-        this.petsFacade.searchByName(searchValue);
+        this.updateQueryParams({ nome: searchValue.nome, raca: searchValue.raca, page: 0 });
+        this.petsFacade.search(searchValue);
       });
   }
 
@@ -82,9 +96,14 @@ export class ListPetsComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  onSearchChange(value: string): void {
-    this.searchTerm.set(value);
-    this.searchSubject.next(value);
+  onSearchNomeChange(value: string): void {
+    this.searchNome.set(value);
+    this.searchSubject.next({ nome: value, raca: this.searchRaca() });
+  }
+
+  onSearchRacaChange(value: string): void {
+    this.searchRaca.set(value);
+    this.searchSubject.next({ nome: this.searchNome(), raca: value });
   }
 
   onPageChange(page: number): void {
@@ -144,11 +163,14 @@ export class ListPetsComponent implements OnInit, OnDestroy {
     this.router.navigate(['/pets/novo']);
   }
 
-  private updateQueryParams(params: { nome?: string; page?: number }): void {
+  private updateQueryParams(params: { nome?: string; raca?: string; page?: number }): void {
     const queryParams: Record<string, string | number | null> = {};
 
     if (params.nome !== undefined) {
       queryParams['nome'] = params.nome || null;
+    }
+    if (params.raca !== undefined) {
+      queryParams['raca'] = params.raca || null;
     }
     if (params.page !== undefined) {
       queryParams['page'] = params.page;

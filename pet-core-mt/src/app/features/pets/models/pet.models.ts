@@ -37,6 +37,7 @@ export interface PetResponse {
 
 export interface PetQuery {
   nome?: string;
+  raca?: string;
   page?: number;
   size?: number;
 }

@@ -53,5 +53,27 @@ describe('PetsFacade', () => {
     expect(getPets).toHaveBeenCalledTimes(1);
     expect(getPets).toHaveBeenCalledWith({ nome: 'Rex', page: 0, size: 10 });
   });
+
+  it('search deve chamar API com nome e raca trimados e page 0', () => {
+    const getPets = vi.fn(() =>
+      of({
+        page: 0,
+        size: 10,
+        total: 0,
+        pageCount: 0,
+        content: []
+      })
+    );
+
+    TestBed.configureTestingModule({
+      providers: [PetsFacade, { provide: PetsApiService, useValue: { getPets } }]
+    });
+
+    const facade = TestBed.inject(PetsFacade);
+    facade.search({ nome: '  Rex  ', raca: '  Poodle  ' });
+
+    expect(getPets).toHaveBeenCalledTimes(1);
+    expect(getPets).toHaveBeenCalledWith({ nome: 'Rex', raca: 'Poodle', page: 0, size: 10 });
+  });
 });
 

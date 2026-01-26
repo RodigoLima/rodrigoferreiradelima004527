@@ -37,6 +37,6 @@ describe('App', () => {
     fixture.detectChanges();
     await fixture.whenStable();
     const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('h1')?.textContent).toContain('Pet Gerenciador');
+    expect(compiled.querySelector('.app-title')?.textContent ?? '').toContain('Pet Gerenciador');
   });
 });
