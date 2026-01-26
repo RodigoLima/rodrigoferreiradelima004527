@@ -42,8 +42,12 @@ export class PetsApiService {
 
   uploadPetPhoto(id: number, file: File): Observable<PetFoto> {
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append('foto', file, file.name);
     return this.httpHelper.postMultipart<PetFoto>(`/v1/pets/${id}/fotos`, formData);
+  }
+
+  deletePetPhoto(petId: number, fotoId: number): Observable<void> {
+    return this.httpHelper.delete<void>(`/v1/pets/${petId}/fotos/${fotoId}`);
   }
 
   deletePet(id: number): Observable<void> {

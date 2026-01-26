@@ -36,7 +36,15 @@
     } @else {
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6 mb-8">
         @for (tutor of tutores(); track tutor.id) {
-          <p-card [header]="tutor.nome" styleClass="h-full overflow-hidden border border-transparent transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:border-gray-200 hover:bg-gray-50/40">
+          <p-card
+            [header]="tutor.nome"
+            styleClass="h-full overflow-hidden border border-transparent transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:border-gray-200 hover:bg-gray-50/40 cursor-pointer"
+            role="button"
+            tabindex="0"
+            (click)="viewTutorDetail(tutor.id)"
+            (keydown.enter)="viewTutorDetail(tutor.id)"
+            (keydown.space)="viewTutorDetail(tutor.id)"
+          >
             <ng-template pTemplate="header">
               <div class="w-full h-48 bg-gray-200 flex items-center justify-center overflow-hidden">
                 @if (tutor.foto?.url) {
@@ -66,7 +74,7 @@
                 label="Detalhes"
                 icon="pi pi-eye"
                 class="p-button-text p-button-sm w-full"
-                (click)="viewTutorDetail(tutor.id)"
+                (click)="$event.stopPropagation(); viewTutorDetail(tutor.id)"
                 [disabled]="deletingId() === tutor.id"
               ></button>
               <button
@@ -74,7 +82,7 @@
                 label="Editar"
                 icon="pi pi-pencil"
                 class="p-button-text p-button-sm w-full"
-                (click)="editTutor(tutor.id)"
+                (click)="$event.stopPropagation(); editTutor(tutor.id)"
                 [disabled]="deletingId() === tutor.id"
               ></button>
               <button
@@ -82,7 +90,7 @@
                 label="Excluir"
                 icon="pi pi-trash"
                 class="p-button-text p-button-sm p-button-danger w-full"
-                (click)="deleteTutor(tutor)"
+                (click)="$event.stopPropagation(); deleteTutor(tutor)"
                 [disabled]="deletingId() === tutor.id"
               ></button>
             </div>

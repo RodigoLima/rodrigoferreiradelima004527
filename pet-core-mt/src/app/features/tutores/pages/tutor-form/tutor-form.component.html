@@ -126,6 +126,27 @@
                   <div class="w-full h-64 bg-gray-200 rounded-xl overflow-hidden ring-1 ring-gray-200">
                     <img [src]="previewUrl()" alt="Preview" class="w-full h-64 object-cover" />
                   </div>
+                  @if (selectedFile()) {
+                    <button
+                      type="button"
+                      pButton
+                      label="Remover foto selecionada"
+                      icon="pi pi-trash"
+                      class="p-button-text p-button-danger w-full sm:w-auto"
+                      (click)="clearSelectedPhoto()"
+                      [disabled]="isLoading() || isUploading()"
+                    ></button>
+                  } @else if (tutorId() && currentPhotoId()) {
+                    <button
+                      type="button"
+                      pButton
+                      label="{{ removeCurrentPhotoOnSave() ? 'Desfazer remoção' : 'Remover foto' }}"
+                      icon="pi pi-trash"
+                      class="p-button-text p-button-danger w-full sm:w-auto"
+                      (click)="toggleRemoveCurrentPhoto()"
+                      [disabled]="isLoading() || isUploading()"
+                    ></button>
+                  }
                 }
                 <input
                   id="foto"
@@ -133,6 +154,7 @@
                   accept="image/*"
                   (change)="onFileSelected($event)"
                   class="file-input"
+                  #fotoInput
                 />
               </div>
             </div>

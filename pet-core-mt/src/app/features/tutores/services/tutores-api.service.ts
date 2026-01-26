@@ -39,8 +39,12 @@ export class TutoresApiService {
 
   uploadTutorPhoto(id: number, file: File): Observable<TutorFoto> {
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append('foto', file, file.name);
     return this.httpHelper.postMultipart<TutorFoto>(`/v1/tutores/${id}/fotos`, formData);
+  }
+
+  deleteTutorPhoto(tutorId: number, fotoId: number): Observable<void> {
+    return this.httpHelper.delete<void>(`/v1/tutores/${tutorId}/fotos/${fotoId}`);
   }
 
   linkPet(tutorId: number, petId: number): Observable<void> {

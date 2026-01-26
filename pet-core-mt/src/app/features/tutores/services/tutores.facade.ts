@@ -130,6 +130,15 @@ export class TutoresFacade {
     );
   }
 
+  deleteTutorPhoto(tutorId: number, fotoId: number): Observable<void> {
+    return this.tutoresApi.deleteTutorPhoto(tutorId, fotoId).pipe(
+      catchError(error => {
+        const errorMessage = typeof error === 'string' ? error : 'Erro ao remover foto do tutor';
+        return throwError(() => errorMessage);
+      })
+    );
+  }
+
   linkPet(tutorId: number, petId: number): Observable<void> {
     return this.tutoresApi.linkPet(tutorId, petId).pipe(
       catchError(error => {

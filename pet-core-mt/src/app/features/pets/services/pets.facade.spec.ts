@@ -75,5 +75,39 @@ describe('PetsFacade', () => {
     expect(getPets).toHaveBeenCalledTimes(1);
     expect(getPets).toHaveBeenCalledWith({ nome: 'Rex', raca: 'Poodle', page: 0, size: 10 });
   });
+
+  it('deletePetPhoto deve chamar API e atualizar lista', async () => {
+    const getPets = vi.fn(() =>
+      of({
+        page: 0,
+        size: 10,
+        total: 0,
+        pageCount: 0,
+        content: []
+      })
+    );
+    const deletePetPhoto = vi.fn(() => of(void 0));
+
+    TestBed.configureTestingModule({
+      providers: [
+        PetsFacade,
+        {
+          provide: PetsApiService,
+          useValue: {
+            getPets,
+            deletePetPhoto,
+            getPetById: vi.fn(() => of({ id: 1, nome: 'Rex', raca: 'Vira-lata', idade: 2, foto: null, tutores: [] }))
+          }
+        }
+      ]
+    });
+
+    const facade = TestBed.inject(PetsFacade);
+    facade.fetchPets({ page: 0, size: 10 });
+
+    await expect(firstValueFrom(facade.deletePetPhoto(1, 9))).resolves.toBeUndefined();
+    expect(deletePetPhoto).toHaveBeenCalledWith(1, 9);
+    expect(getPets).toHaveBeenCalledTimes(2);
+  });
 });
 

@@ -28,7 +28,8 @@ describe('PetDetailComponent', () => {
             petDetailLoading$: of(false),
             petDetailError$: of(null),
             fetchPetDetail,
-            deletePet: vi.fn()
+            deletePet: vi.fn(),
+            deletePetPhoto: vi.fn(() => of(void 0))
           }
         },
         { provide: TutoresApiService, useValue: { getTutorById: vi.fn(() => of(null)) } }

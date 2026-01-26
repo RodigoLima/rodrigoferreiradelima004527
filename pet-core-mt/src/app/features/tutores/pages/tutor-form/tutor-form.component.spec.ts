@@ -19,7 +19,7 @@ describe('TutorFormComponent', () => {
         MessageService,
         { provide: Router, useValue: { navigate: vi.fn() } },
         { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => null } } } },
-        { provide: TutoresFacade, useValue: { fetchTutorDetail, createTutor: vi.fn(), updateTutor: vi.fn(), uploadTutorPhoto: vi.fn(), linkPet: vi.fn(), unlinkPet: vi.fn() } },
+        { provide: TutoresFacade, useValue: { fetchTutorDetail, createTutor: vi.fn(), updateTutor: vi.fn(), uploadTutorPhoto: vi.fn(), deleteTutorPhoto: vi.fn(), linkPet: vi.fn(), unlinkPet: vi.fn() } },
         { provide: PetsFacade, useValue: { pets$: of([]), loading$: of(false), fetchPets: vi.fn(), searchByName: vi.fn() } }
       ]
     }).compileComponents();
@@ -53,7 +53,7 @@ describe('TutorFormComponent', () => {
         MessageService,
         { provide: Router, useValue: { navigate: vi.fn() } },
         { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => '10' } } } },
-        { provide: TutoresFacade, useValue: { fetchTutorDetail, createTutor: vi.fn(), updateTutor: vi.fn(), uploadTutorPhoto: vi.fn(), linkPet: vi.fn(), unlinkPet: vi.fn() } },
+        { provide: TutoresFacade, useValue: { fetchTutorDetail, createTutor: vi.fn(), updateTutor: vi.fn(), uploadTutorPhoto: vi.fn(), deleteTutorPhoto: vi.fn(), linkPet: vi.fn(), unlinkPet: vi.fn() } },
         { provide: PetsFacade, useValue: { pets$: of([]), loading$: of(false), fetchPets: vi.fn(), searchByName: vi.fn() } }
       ]
     }).compileComponents();

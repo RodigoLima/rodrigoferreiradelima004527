@@ -4,7 +4,7 @@ import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { of } from 'rxjs';
 import { PetsFacade } from '../../services/pets.facade';
 import { PetFormComponent } from './pet-form.component';
-import { MessageService } from 'primeng/api';
+import { ConfirmationService, MessageService } from 'primeng/api';
 
 describe('PetFormComponent', () => {
   it('deve criar em modo novo quando não houver id', async () => {
@@ -14,6 +14,7 @@ describe('PetFormComponent', () => {
       imports: [PetFormComponent],
       providers: [
         provideNoopAnimations(),
+        ConfirmationService,
         MessageService,
         { provide: Router, useValue: { navigate: vi.fn() } },
         { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => null } } } },
@@ -37,6 +38,7 @@ describe('PetFormComponent', () => {
       imports: [PetFormComponent],
       providers: [
         provideNoopAnimations(),
+        ConfirmationService,
         MessageService,
         { provide: Router, useValue: { navigate: vi.fn() } },
         { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => '1' } } } },

@@ -183,6 +183,21 @@ export class PetsFacade {
     );
   }
 
+  deletePetPhoto(petId: number, fotoId: number): Observable<void> {
+    return this.petsApi.deletePetPhoto(petId, fotoId).pipe(
+      tap(() => {
+        this.fetchPets(this.currentState.query);
+        if (this.detailStateSubject.value.pet?.id === petId) {
+          this.fetchPetDetail(petId).subscribe();
+        }
+      }),
+      catchError(error => {
+        const errorMessage = typeof error === 'string' ? error : 'Erro ao remover foto do pet';
+        throw errorMessage;
+      })
+    );
+  }
+
   deletePet(id: number): Observable<void> {
     return this.petsApi.deletePet(id).pipe(
       tap(() => {

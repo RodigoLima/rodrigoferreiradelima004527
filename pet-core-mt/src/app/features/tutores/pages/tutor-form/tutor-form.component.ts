@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, inject, signal } from '@angular/core';
+import { Component, ElementRef, OnInit, OnDestroy, ViewChild, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -42,12 +42,17 @@ export class TutorFormComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
   private searchSubject = new Subject<string>();
 
+  @ViewChild('fotoInput') fotoInput?: ElementRef<HTMLInputElement>;
+
   tutorForm!: FormGroup;
   isLoading = signal(false);
   isUploading = signal(false);
   tutorId = signal<number | null>(null);
   selectedFile = signal<File | null>(null);
   previewUrl = signal<string | null>(null);
+  currentPhotoId = signal<number | null>(null);
+  currentPhotoUrl = signal<string | null>(null);
+  removeCurrentPhotoOnSave = signal(false);
   tutorDetail = signal<TutorDetail | null>(null);
 
   initialLinkedPetIds = signal<number[]>([]);
@@ -117,7 +122,12 @@ export class TutorFormComponent implements OnInit, OnDestroy {
           cpf: tutor.cpf ? this.formatCpf(tutor.cpf) : ''
         });
         if (tutor.foto?.url) {
+          this.currentPhotoId.set(tutor.foto.id);
+          this.currentPhotoUrl.set(tutor.foto.url);
           this.previewUrl.set(tutor.foto.url);
+        } else {
+          this.currentPhotoId.set(null);
+          this.currentPhotoUrl.set(null);
         }
       },
       error: () => {
@@ -228,6 +238,47 @@ export class TutorFormComponent implements OnInit, OnDestroy {
     }
   }
 
+  clearSelectedPhoto(): void {
+    if (!this.selectedFile()) return;
+
+    this.selectedFile.set(null);
+    if (this.fotoInput?.nativeElement) {
+      this.fotoInput.nativeElement.value = '';
+    }
+
+    if (this.removeCurrentPhotoOnSave()) {
+      this.previewUrl.set(null);
+      return;
+    }
+    this.previewUrl.set(this.currentPhotoUrl());
+  }
+
+  toggleRemoveCurrentPhoto(): void {
+    const id = this.tutorId();
+    const fotoId = this.currentPhotoId();
+    if (!id || !fotoId || this.isLoading() || this.isUploading() || this.selectedFile()) return;
+
+    if (this.removeCurrentPhotoOnSave()) {
+      this.removeCurrentPhotoOnSave.set(false);
+      this.previewUrl.set(this.currentPhotoUrl());
+      return;
+    }
+
+    this.confirmationService.confirm({
+      header: 'Remover foto',
+      message: 'A foto será removida após salvar. Deseja continuar?',
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: 'Confirmar',
+      rejectLabel: 'Cancelar',
+      acceptButtonStyleClass: 'p-button-danger',
+      rejectButtonStyleClass: 'p-button-text',
+      accept: () => {
+        this.removeCurrentPhotoOnSave.set(true);
+        this.previewUrl.set(null);
+      }
+    });
+  }
+
   onSubmit(): void {
     if (this.tutorForm.invalid) {
       this.markFormGroupTouched(this.tutorForm);
@@ -263,7 +314,13 @@ export class TutorFormComponent implements OnInit, OnDestroy {
       next: ({ tutor, tutorIdToUse }) => {
         this.initialLinkedPetIds.set(this.linkedPets().map(p => p.id));
         if (this.selectedFile()) {
-          this.uploadPhoto(tutorIdToUse);
+          if (id && this.removeCurrentPhotoOnSave() && this.currentPhotoId()) {
+            this.replacePhotoAfterSave(tutorIdToUse, this.currentPhotoId()!);
+          } else {
+            this.uploadPhoto(tutorIdToUse);
+          }
+        } else if (id && this.removeCurrentPhotoOnSave() && this.currentPhotoId()) {
+          this.deleteCurrentPhotoAfterSave(tutorIdToUse, this.currentPhotoId()!);
         } else {
           this.messageService.add({
             severity: 'success',
@@ -279,6 +336,65 @@ export class TutorFormComponent implements OnInit, OnDestroy {
             ? error
             : 'Erro ao salvar tutor. Verifique os dados e tente novamente.';
         this.messageService.add({ severity: 'error', summary: 'Erro', detail });
+      }
+    });
+  }
+
+  replacePhotoAfterSave(tutorId: number, oldFotoId: number): void {
+    const file = this.selectedFile();
+    if (!file) {
+      this.router.navigate(['/tutores', tutorId]);
+      return;
+    }
+
+    this.isUploading.set(true);
+    this.tutoresFacade.deleteTutorPhoto(tutorId, oldFotoId).pipe(
+      switchMap(() => this.tutoresFacade.uploadTutorPhoto(tutorId, file)),
+      finalize(() => this.isUploading.set(false))
+    ).subscribe({
+      next: () => {
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Sucesso',
+          detail: 'Tutor salvo com sucesso!'
+        });
+        this.router.navigate(['/tutores', tutorId]);
+      },
+      error: (error: unknown) => {
+        const detail =
+          typeof error === 'string' && error.trim().length > 0
+            ? error
+            : 'Tutor salvo, mas houve erro ao atualizar a foto.';
+        this.messageService.add({ severity: 'warn', summary: 'Atenção', detail });
+        setTimeout(() => {
+          this.router.navigate(['/tutores', tutorId]);
+        }, 2000);
+      }
+    });
+  }
+
+  deleteCurrentPhotoAfterSave(tutorId: number, fotoId: number): void {
+    this.isUploading.set(true);
+    this.tutoresFacade.deleteTutorPhoto(tutorId, fotoId).pipe(
+      finalize(() => this.isUploading.set(false))
+    ).subscribe({
+      next: () => {
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Sucesso',
+          detail: 'Tutor salvo com sucesso!'
+        });
+        this.router.navigate(['/tutores', tutorId]);
+      },
+      error: (error: unknown) => {
+        const detail =
+          typeof error === 'string' && error.trim().length > 0
+            ? error
+            : 'Tutor salvo, mas houve erro ao remover a foto.';
+        this.messageService.add({ severity: 'warn', summary: 'Atenção', detail });
+        setTimeout(() => {
+          this.router.navigate(['/tutores', tutorId]);
+        }, 2000);
       }
     });
   }
