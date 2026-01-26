@@ -1,4 +1,5 @@
 import { InjectionToken } from '@angular/core';
+import { environment } from '../../../environments/environment';
 
 export interface ApiConfig {
   baseUrl: string;
@@ -7,5 +8,5 @@ export interface ApiConfig {
 export const API_CONFIG = new InjectionToken<ApiConfig>('API_CONFIG');
 
 export const DEFAULT_API_CONFIG: ApiConfig = {
-  baseUrl: 'http://localhost:8080/api'
+  baseUrl: environment.apiBaseUrl
 };
