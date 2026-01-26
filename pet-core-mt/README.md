@@ -149,12 +149,12 @@ ng serve
 Por padrão:
 
 - **Dev (`ng serve`)**: `apiBaseUrl = http://localhost:8080/api` em `src/environments/environment.ts`
-- **Prod (`ng build` / Docker)**: `apiBaseUrl = /api` em `src/environments/environment.prod.ts`
+- **Prod (`ng build` / Docker)**: `apiBaseUrl = /api` em `src/environments/environment.prod.ts` (Nginx faz proxy para o serviço `api`)
 
 Para alterar:
 
 1. Edite `src/environments/environment.ts` (desenvolvimento) e/ou `src/environments/environment.prod.ts` (produção)
-2. Ajuste `apiBaseUrl` para a URL desejada (ex.: `https://api.seudominio.com/api`)
+2. Mantenha `apiBaseUrl = /api` em produção para funcionar com o Docker Compose
 
 ## 🧪 Testes
 
@@ -171,10 +171,11 @@ ng test
 
 Os testes são executados com **Vitest** e incluem:
 
-- Testes de Facades (estado, loading, erros)
-- Testes de Interceptors (autenticação, refresh)
+- Testes de Facades (estado e paginação)
+- Testes de Interceptors (autenticação e refresh)
 - Testes de Guards (proteção de rotas)
-- Testes de Componentes (montagem, interações)
+- Testes de helpers HTTP (montagem de URL/params e tratamento de erro)
+- Testes de componentes (montagem, validação de formulário e fluxo de login)
 
 ## 📦 Build e Deploy
 
@@ -196,26 +197,36 @@ ng build --configuration development
 
 ### Deploy com Docker 
 
-O projeto inclui um Dockerfile multi-stage otimizado:
+Frontend + API juntos (mesma rede Docker, sem CORS).
 
-1. **Build da imagem**:
+O frontend chama `"/api"` e o Nginx faz proxy para o service `api` dentro da rede do Docker.
+
 ```bash
-docker build -t pet-core-mt:latest .
+API_IMAGE=petmanagerapi:latest docker compose up -d --build
 ```
 
-2. **Executar o container**:
+Depois:
+
+- Frontend: `http://localhost:8080`
+- API (opcional para debug): `http://localhost:8081`
+
+Para trocar portas:
+
 ```bash
-docker run -d -p 8080:80 --name pet-core-mt pet-core-mt:latest
+FRONT_PORT=8080 API_PORT=8081 docker compose up -d --build
 ```
 
-3. **Verificar health checks**:
+**Health checks**:
 ```bash
 curl http://localhost:8080/healthz
 curl http://localhost:8080/readyz
 ```
 
-4. **Acessar a aplicação**:
-   - Abra `http://localhost:8080` no navegador
+Para parar:
+
+```bash
+docker compose down
+```
 
 ### Health Checks
 
