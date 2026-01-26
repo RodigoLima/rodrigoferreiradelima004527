@@ -11,6 +11,7 @@ import { CardModule } from 'primeng/card';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { DialogModule } from 'primeng/dialog';
+import { ConfirmationService, MessageService } from 'primeng/api';
 import { PhoneMaskDirective } from '../../../../shared/forms/phone-mask.directive';
 import { CpfMaskDirective } from '../../../../shared/forms/cpf-mask.directive';
 
@@ -36,13 +37,14 @@ export class TutorFormComponent implements OnInit, OnDestroy {
   private petsFacade = inject(PetsFacade);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
+  private confirmationService = inject(ConfirmationService);
+  private messageService = inject(MessageService);
   private destroy$ = new Subject<void>();
   private searchSubject = new Subject<string>();
 
   tutorForm!: FormGroup;
   isLoading = signal(false);
   isUploading = signal(false);
-  errorMessage = signal<string | null>(null);
   tutorId = signal<number | null>(null);
   selectedFile = signal<File | null>(null);
   previewUrl = signal<string | null>(null);
@@ -115,7 +117,11 @@ export class TutorFormComponent implements OnInit, OnDestroy {
         }
       },
       error: () => {
-        this.errorMessage.set('Erro ao carregar dados do tutor');
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Erro',
+          detail: 'Erro ao carregar dados do tutor'
+        });
       }
     });
   }
@@ -157,10 +163,19 @@ export class TutorFormComponent implements OnInit, OnDestroy {
       })
     ).subscribe({
       next: () => {
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Sucesso',
+          detail: 'Pet vinculado com sucesso!'
+        });
         this.closeLinkDialog();
       },
       error: () => {
-        this.errorMessage.set('Erro ao vincular pet');
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Erro',
+          detail: 'Erro ao vincular pet'
+        });
       }
     });
   }
@@ -169,19 +184,37 @@ export class TutorFormComponent implements OnInit, OnDestroy {
     const tutorId = this.tutorId();
     if (!tutorId) return;
 
-    if (!confirm('Deseja realmente desvincular este pet?')) {
-      return;
-    }
-
-    this.linkingPetId.set(petId);
-    this.tutoresFacade.unlinkPet(tutorId, petId).pipe(
-      finalize(() => {
-        this.linkingPetId.set(null);
-        this.loadTutor();
-      })
-    ).subscribe({
-      error: () => {
-        this.errorMessage.set('Erro ao desvincular pet');
+    this.confirmationService.confirm({
+      header: 'Confirmar desvinculação',
+      message: 'Deseja realmente desvincular este pet?',
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: 'Desvincular',
+      rejectLabel: 'Cancelar',
+      acceptButtonStyleClass: 'p-button-danger',
+      rejectButtonStyleClass: 'p-button-text',
+      accept: () => {
+        this.linkingPetId.set(petId);
+        this.tutoresFacade.unlinkPet(tutorId, petId).pipe(
+          finalize(() => {
+            this.linkingPetId.set(null);
+            this.loadTutor();
+          })
+        ).subscribe({
+          next: () => {
+            this.messageService.add({
+              severity: 'success',
+              summary: 'Sucesso',
+              detail: 'Pet desvinculado com sucesso!'
+            });
+          },
+          error: () => {
+            this.messageService.add({
+              severity: 'error',
+              summary: 'Erro',
+              detail: 'Erro ao desvincular pet'
+            });
+          }
+        });
       }
     });
   }
@@ -207,7 +240,6 @@ export class TutorFormComponent implements OnInit, OnDestroy {
     }
 
     this.isLoading.set(true);
-    this.errorMessage.set(null);
 
     const formValue = this.tutorForm.value;
     const cpfDigits = String(formValue.cpf ?? '').replace(/\D/g, '');
@@ -232,15 +264,20 @@ export class TutorFormComponent implements OnInit, OnDestroy {
         if (this.selectedFile()) {
           this.uploadPhoto(tutorIdToUse);
         } else {
+          this.messageService.add({
+            severity: 'success',
+            summary: 'Sucesso',
+            detail: 'Tutor salvo com sucesso!'
+          });
           this.router.navigate(['/tutores', tutorIdToUse]);
         }
       },
       error: (error: unknown) => {
-        this.errorMessage.set(
+        const detail =
           typeof error === 'string' && error.trim().length > 0
             ? error
-            : 'Erro ao salvar tutor. Verifique os dados e tente novamente.'
-        );
+            : 'Erro ao salvar tutor. Verifique os dados e tente novamente.';
+        this.messageService.add({ severity: 'error', summary: 'Erro', detail });
       }
     });
   }
@@ -257,14 +294,19 @@ export class TutorFormComponent implements OnInit, OnDestroy {
       finalize(() => this.isUploading.set(false))
     ).subscribe({
       next: () => {
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Sucesso',
+          detail: 'Tutor salvo com sucesso!'
+        });
         this.router.navigate(['/tutores', tutorId]);
       },
       error: (error: unknown) => {
-        this.errorMessage.set(
+        const detail =
           typeof error === 'string' && error.trim().length > 0
             ? error
-            : 'Tutor salvo, mas houve erro ao fazer upload da foto.'
-        );
+            : 'Tutor salvo, mas houve erro ao fazer upload da foto.';
+        this.messageService.add({ severity: 'warn', summary: 'Atenção', detail });
         setTimeout(() => {
           this.router.navigate(['/tutores', tutorId]);
         }, 2000);

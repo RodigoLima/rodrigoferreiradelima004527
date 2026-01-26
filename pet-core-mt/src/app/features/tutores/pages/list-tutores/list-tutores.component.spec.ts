@@ -4,6 +4,7 @@ import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { of } from 'rxjs';
 import { TutoresFacade } from '../../services/tutores.facade';
 import { ListTutoresComponent } from './list-tutores.component';
+import { ConfirmationService, MessageService } from 'primeng/api';
 
 describe('ListTutoresComponent', () => {
   it('deve criar e chamar fetchTutores com query params', async () => {
@@ -13,6 +14,8 @@ describe('ListTutoresComponent', () => {
       imports: [ListTutoresComponent],
       providers: [
         provideNoopAnimations(),
+        ConfirmationService,
+        MessageService,
         { provide: Router, useValue: { navigate: vi.fn() } },
         { provide: ActivatedRoute, useValue: { snapshot: { queryParams: { nome: 'Ana', page: '1' } } } },
         {

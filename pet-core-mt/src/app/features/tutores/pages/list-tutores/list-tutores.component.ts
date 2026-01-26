@@ -9,6 +9,7 @@ import { CardModule } from 'primeng/card';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { PaginatorModule, PaginatorState } from 'primeng/paginator';
+import { ConfirmationService, MessageService } from 'primeng/api';
 
 @Component({
   selector: 'app-list-tutores',
@@ -28,13 +29,13 @@ export class ListTutoresComponent implements OnInit, OnDestroy {
   private tutoresFacade = inject(TutoresFacade);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
+  private confirmationService = inject(ConfirmationService);
+  private messageService = inject(MessageService);
   private destroy$ = new Subject<void>();
   private searchSubject = new Subject<string>();
 
   tutores = signal<Tutor[]>([]);
   loading = signal(false);
-  error = signal<string | null>(null);
-  successMessage = signal<string | null>(null);
   deletingId = signal<number | null>(null);
   totalPages = signal(0);
   currentPage = signal(0);
@@ -45,7 +46,12 @@ export class ListTutoresComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.tutoresFacade.tutores$.pipe(takeUntil(this.destroy$)).subscribe(tutores => this.tutores.set(tutores));
     this.tutoresFacade.loading$.pipe(takeUntil(this.destroy$)).subscribe(v => this.loading.set(v));
-    this.tutoresFacade.error$.pipe(takeUntil(this.destroy$)).subscribe(v => this.error.set(v));
+    this.tutoresFacade.error$
+      .pipe(distinctUntilChanged(), takeUntil(this.destroy$))
+      .subscribe(v => {
+        if (!v) return;
+        this.messageService.add({ severity: 'error', summary: 'Erro', detail: v });
+      });
     this.tutoresFacade.pageCount$.pipe(takeUntil(this.destroy$)).subscribe(v => this.totalPages.set(v));
     this.tutoresFacade.currentPage$.pipe(takeUntil(this.destroy$)).subscribe(v => this.currentPage.set(v));
     this.tutoresFacade.total$.pipe(takeUntil(this.destroy$)).subscribe(v => this.totalElements.set(v));
@@ -101,23 +107,35 @@ export class ListTutoresComponent implements OnInit, OnDestroy {
   deleteTutor(tutor: Tutor): void {
     if (this.deletingId() === tutor.id) return;
 
-    const confirmed = confirm(
-      `Tem certeza que deseja excluir o tutor "${tutor.nome}"? Esta ação não pode ser desfeita.`
-    );
-    if (!confirmed) return;
+    this.confirmationService.confirm({
+      header: 'Confirmar exclusão',
+      message: `Tem certeza que deseja excluir o tutor "${tutor.nome}"? Esta ação não pode ser desfeita.`,
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: 'Excluir',
+      rejectLabel: 'Cancelar',
+      acceptButtonStyleClass: 'p-button-danger',
+      rejectButtonStyleClass: 'p-button-text',
+      accept: () => {
+        this.deletingId.set(tutor.id);
 
-    this.deletingId.set(tutor.id);
-    this.error.set(null);
-    this.successMessage.set(null);
-
-    this.tutoresFacade.deleteTutor(tutor.id).subscribe({
-      next: () => {
-        this.successMessage.set('Tutor excluído com sucesso!');
-        this.deletingId.set(null);
-      },
-      error: (err) => {
-        this.error.set(typeof err === 'string' ? err : 'Erro ao excluir tutor');
-        this.deletingId.set(null);
+        this.tutoresFacade.deleteTutor(tutor.id).subscribe({
+          next: () => {
+            this.messageService.add({
+              severity: 'success',
+              summary: 'Sucesso',
+              detail: 'Tutor excluído com sucesso!'
+            });
+            this.deletingId.set(null);
+          },
+          error: (err) => {
+            this.messageService.add({
+              severity: 'error',
+              summary: 'Erro',
+              detail: typeof err === 'string' ? err : 'Erro ao excluir tutor'
+            });
+            this.deletingId.set(null);
+          }
+        });
       }
     });
   }

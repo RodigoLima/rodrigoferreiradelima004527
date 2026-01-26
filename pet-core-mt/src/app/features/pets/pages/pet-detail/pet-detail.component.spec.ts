@@ -5,6 +5,7 @@ import { of } from 'rxjs';
 import { PetsFacade } from '../../services/pets.facade';
 import { TutoresApiService } from '../../../tutores/services/tutores-api.service';
 import { PetDetailComponent } from './pet-detail.component';
+import { ConfirmationService, MessageService } from 'primeng/api';
 
 describe('PetDetailComponent', () => {
   it('deve criar e chamar fetchPetDetail quando houver id na rota', async () => {
@@ -16,6 +17,8 @@ describe('PetDetailComponent', () => {
       imports: [PetDetailComponent],
       providers: [
         provideNoopAnimations(),
+        ConfirmationService,
+        MessageService,
         { provide: Router, useValue: { navigate: vi.fn() } },
         { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => '1' } } } },
         {

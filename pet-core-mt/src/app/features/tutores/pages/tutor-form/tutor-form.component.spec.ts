@@ -5,6 +5,7 @@ import { of } from 'rxjs';
 import { PetsFacade } from '../../../pets/services/pets.facade';
 import { TutoresFacade } from '../../services/tutores.facade';
 import { TutorFormComponent } from './tutor-form.component';
+import { ConfirmationService, MessageService } from 'primeng/api';
 
 describe('TutorFormComponent', () => {
   it('deve criar em modo novo quando não houver id', async () => {
@@ -14,6 +15,8 @@ describe('TutorFormComponent', () => {
       imports: [TutorFormComponent],
       providers: [
         provideNoopAnimations(),
+        ConfirmationService,
+        MessageService,
         { provide: Router, useValue: { navigate: vi.fn() } },
         { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => null } } } },
         { provide: TutoresFacade, useValue: { fetchTutorDetail, createTutor: vi.fn(), updateTutor: vi.fn(), uploadTutorPhoto: vi.fn(), linkPet: vi.fn(), unlinkPet: vi.fn() } },
@@ -46,6 +49,8 @@ describe('TutorFormComponent', () => {
       imports: [TutorFormComponent],
       providers: [
         provideNoopAnimations(),
+        ConfirmationService,
+        MessageService,
         { provide: Router, useValue: { navigate: vi.fn() } },
         { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => '10' } } } },
         { provide: TutoresFacade, useValue: { fetchTutorDetail, createTutor: vi.fn(), updateTutor: vi.fn(), uploadTutorPhoto: vi.fn(), linkPet: vi.fn(), unlinkPet: vi.fn() } },

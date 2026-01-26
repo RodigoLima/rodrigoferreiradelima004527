@@ -3,6 +3,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { of } from 'rxjs';
 import { AuthFacade } from '../../core/auth/auth.facade';
 import { LoginComponent } from './login.component';
+import { MessageService } from 'primeng/api';
 
 describe('LoginComponent', () => {
   it('deve navegar para returnUrl após login', async () => {
@@ -12,6 +13,7 @@ describe('LoginComponent', () => {
     await TestBed.configureTestingModule({
       imports: [LoginComponent],
       providers: [
+        MessageService,
         { provide: Router, useValue: { navigate } },
         { provide: ActivatedRoute, useValue: { snapshot: { queryParams: { returnUrl: '/pets' } } } },
         { provide: AuthFacade, useValue: { login } }
@@ -38,6 +40,7 @@ describe('LoginComponent', () => {
     await TestBed.configureTestingModule({
       imports: [LoginComponent],
       providers: [
+        MessageService,
         { provide: Router, useValue: { navigate } },
         { provide: ActivatedRoute, useValue: { snapshot: { queryParams: {} } } },
         { provide: AuthFacade, useValue: { login } }

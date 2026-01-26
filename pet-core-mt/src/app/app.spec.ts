@@ -1,6 +1,8 @@
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
+import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { of } from 'rxjs';
+import { ConfirmationService, MessageService } from 'primeng/api';
 import { App } from './app';
 import { AuthFacade } from './core/auth/auth.facade';
 
@@ -10,6 +12,9 @@ describe('App', () => {
       imports: [App],
       providers: [
         provideRouter([]),
+        provideNoopAnimations(),
+        ConfirmationService,
+        MessageService,
         {
           provide: AuthFacade,
           useValue: {

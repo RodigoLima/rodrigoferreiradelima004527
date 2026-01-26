@@ -8,6 +8,7 @@ import { PetDetail } from '../../models/pet.models';
 import { CardModule } from 'primeng/card';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
+import { MessageService } from 'primeng/api';
 
 @Component({
   selector: 'app-pet-form',
@@ -27,11 +28,11 @@ export class PetFormComponent implements OnInit {
   private petsFacade = inject(PetsFacade);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
+  private messageService = inject(MessageService);
 
   petForm!: FormGroup;
   isLoading = signal(false);
   isUploading = signal(false);
-  errorMessage = signal<string | null>(null);
   petId = signal<number | null>(null);
   selectedFile = signal<File | null>(null);
   previewUrl = signal<string | null>(null);
@@ -69,7 +70,11 @@ export class PetFormComponent implements OnInit {
         }
       },
       error: () => {
-        this.errorMessage.set('Erro ao carregar dados do pet');
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Erro',
+          detail: 'Erro ao carregar dados do pet'
+        });
       }
     });
   }
@@ -95,7 +100,6 @@ export class PetFormComponent implements OnInit {
     }
 
     this.isLoading.set(true);
-    this.errorMessage.set(null);
 
     const formValue = this.petForm.value;
     const petData = {
@@ -117,15 +121,20 @@ export class PetFormComponent implements OnInit {
         if (this.selectedFile()) {
           this.uploadPhoto(petIdToUse);
         } else {
+          this.messageService.add({
+            severity: 'success',
+            summary: 'Sucesso',
+            detail: 'Pet salvo com sucesso!'
+          });
           this.router.navigate(['/pets', petIdToUse]);
         }
       },
       error: (error: unknown) => {
-        this.errorMessage.set(
+        const detail =
           typeof error === 'string' && error.trim().length > 0
             ? error
-            : 'Erro ao salvar pet. Verifique os dados e tente novamente.'
-        );
+            : 'Erro ao salvar pet. Verifique os dados e tente novamente.';
+        this.messageService.add({ severity: 'error', summary: 'Erro', detail });
       }
     });
   }
@@ -142,14 +151,19 @@ export class PetFormComponent implements OnInit {
       finalize(() => this.isUploading.set(false))
     ).subscribe({
       next: () => {
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Sucesso',
+          detail: 'Pet salvo com sucesso!'
+        });
         this.router.navigate(['/pets', petId]);
       },
       error: (error: unknown) => {
-        this.errorMessage.set(
+        const detail =
           typeof error === 'string' && error.trim().length > 0
             ? error
-            : 'Pet salvo, mas houve erro ao fazer upload da foto.'
-        );
+            : 'Pet salvo, mas houve erro ao fazer upload da foto.';
+        this.messageService.add({ severity: 'warn', summary: 'Atenção', detail });
         setTimeout(() => {
           this.router.navigate(['/pets', petId]);
         }, 2000);

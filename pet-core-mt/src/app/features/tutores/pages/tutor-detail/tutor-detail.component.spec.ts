@@ -4,6 +4,7 @@ import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { of } from 'rxjs';
 import { TutoresFacade } from '../../services/tutores.facade';
 import { TutorDetailComponent } from './tutor-detail.component';
+import { ConfirmationService, MessageService } from 'primeng/api';
 
 describe('TutorDetailComponent', () => {
   it('deve criar e carregar dados quando houver id na rota', async () => {
@@ -13,6 +14,8 @@ describe('TutorDetailComponent', () => {
       imports: [TutorDetailComponent],
       providers: [
         provideNoopAnimations(),
+        ConfirmationService,
+        MessageService,
         { provide: Router, useValue: { navigate: vi.fn() } },
         { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => '10' } } } },
         { provide: TutoresFacade, useValue: { fetchTutorDetail, deleteTutor: vi.fn() } }

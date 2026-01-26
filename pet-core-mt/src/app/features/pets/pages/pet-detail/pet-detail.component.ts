@@ -8,6 +8,7 @@ import { TutoresApiService } from '../../../tutores/services/tutores-api.service
 import { TutorDetail } from '../../../tutores/models/tutor.models';
 import { CardModule } from 'primeng/card';
 import { ButtonModule } from 'primeng/button';
+import { ConfirmationService, MessageService } from 'primeng/api';
 
 @Component({
   selector: 'app-pet-detail',
@@ -25,14 +26,14 @@ export class PetDetailComponent implements OnInit, OnDestroy {
   private tutoresApi = inject(TutoresApiService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
+  private confirmationService = inject(ConfirmationService);
+  private messageService = inject(MessageService);
   private destroy$ = new Subject<void>();
 
   pet = signal<PetDetail | null>(null);
   tutores = signal<TutorDetail[]>([]);
   tutoresLoading = signal(false);
   loading = signal(false);
-  error = signal<string | null>(null);
-  successMessage = signal<string | null>(null);
   deleting = signal(false);
 
   ngOnInit(): void {
@@ -72,7 +73,12 @@ export class PetDetailComponent implements OnInit, OnDestroy {
           });
       });
     this.petsFacade.petDetailLoading$.pipe(takeUntil(this.destroy$)).subscribe(v => this.loading.set(v));
-    this.petsFacade.petDetailError$.pipe(takeUntil(this.destroy$)).subscribe(v => this.error.set(v));
+    this.petsFacade.petDetailError$
+      .pipe(distinctUntilChanged(), takeUntil(this.destroy$))
+      .subscribe(v => {
+        if (!v) return;
+        this.messageService.add({ severity: 'error', summary: 'Erro', detail: v });
+      });
 
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
@@ -102,23 +108,37 @@ export class PetDetailComponent implements OnInit, OnDestroy {
     const pet = this.pet();
     if (!pet || this.deleting()) return;
 
-    const confirmed = confirm(`Tem certeza que deseja excluir o pet "${pet.nome}"? Esta ação não pode ser desfeita.`);
-    if (!confirmed) return;
+    this.confirmationService.confirm({
+      header: 'Confirmar exclusão',
+      message: `Tem certeza que deseja excluir o pet "${pet.nome}"? Esta ação não pode ser desfeita.`,
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: 'Excluir',
+      rejectLabel: 'Cancelar',
+      acceptButtonStyleClass: 'p-button-danger',
+      rejectButtonStyleClass: 'p-button-text',
+      accept: () => {
+        this.deleting.set(true);
 
-    this.deleting.set(true);
-    this.error.set(null);
-    this.successMessage.set(null);
-
-    this.petsFacade.deletePet(pet.id).subscribe({
-      next: () => {
-        this.successMessage.set('Pet excluído com sucesso!');
-        setTimeout(() => {
-          this.router.navigate(['/pets']);
-        }, 800);
-      },
-      error: (err) => {
-        this.deleting.set(false);
-        this.error.set(typeof err === 'string' ? err : 'Erro ao excluir pet');
+        this.petsFacade.deletePet(pet.id).subscribe({
+          next: () => {
+            this.messageService.add({
+              severity: 'success',
+              summary: 'Sucesso',
+              detail: 'Pet excluído com sucesso!'
+            });
+            setTimeout(() => {
+              this.router.navigate(['/pets']);
+            }, 800);
+          },
+          error: (err) => {
+            this.deleting.set(false);
+            this.messageService.add({
+              severity: 'error',
+              summary: 'Erro',
+              detail: typeof err === 'string' ? err : 'Erro ao excluir pet'
+            });
+          }
+        });
       }
     });
   }

@@ -4,6 +4,7 @@ import { Router, ActivatedRoute } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { finalize } from 'rxjs';
 import { AuthFacade } from '../../core/auth/auth.facade';
+import { MessageService } from 'primeng/api';
 
 @Component({
   selector: 'app-login',
@@ -17,10 +18,10 @@ export class LoginComponent {
   private authFacade = inject(AuthFacade);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
+  private messageService = inject(MessageService);
 
   loginForm: FormGroup;
   isLoading = signal(false);
-  errorMessage = signal<string | null>(null);
 
   constructor() {
     this.loginForm = this.fb.group({
@@ -35,7 +36,6 @@ export class LoginComponent {
     }
 
     this.isLoading.set(true);
-    this.errorMessage.set(null);
 
     const credentials = this.loginForm.value;
     this.authFacade
@@ -47,11 +47,11 @@ export class LoginComponent {
         this.router.navigate([returnUrl]);
       },
       error: (error: unknown) => {
-        this.errorMessage.set(
+        const detail =
           typeof error === 'string' && error.trim().length > 0
             ? error
-            : 'Erro ao fazer login. Verifique suas credenciais.'
-        );
+            : 'Erro ao fazer login. Verifique suas credenciais.';
+        this.messageService.add({ severity: 'error', summary: 'Erro', detail });
       }
     });
   }

@@ -9,6 +9,7 @@ import { CardModule } from 'primeng/card';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { PaginatorModule, PaginatorState } from 'primeng/paginator';
+import { ConfirmationService, MessageService } from 'primeng/api';
 
 @Component({
   selector: 'app-list-pets',
@@ -28,13 +29,13 @@ export class ListPetsComponent implements OnInit, OnDestroy {
   private petsFacade = inject(PetsFacade);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
+  private confirmationService = inject(ConfirmationService);
+  private messageService = inject(MessageService);
   private destroy$ = new Subject<void>();
   private searchSubject = new Subject<string>();
 
   pets = signal<Pet[]>([]);
   loading = signal(false);
-  error = signal<string | null>(null);
-  successMessage = signal<string | null>(null);
   deletingId = signal<number | null>(null);
   totalPages = signal(0);
   currentPage = signal(0);
@@ -45,7 +46,12 @@ export class ListPetsComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.petsFacade.pets$.pipe(takeUntil(this.destroy$)).subscribe(pets => this.pets.set(pets));
     this.petsFacade.loading$.pipe(takeUntil(this.destroy$)).subscribe(v => this.loading.set(v));
-    this.petsFacade.error$.pipe(takeUntil(this.destroy$)).subscribe(v => this.error.set(v));
+    this.petsFacade.error$
+      .pipe(distinctUntilChanged(), takeUntil(this.destroy$))
+      .subscribe(v => {
+        if (!v) return;
+        this.messageService.add({ severity: 'error', summary: 'Erro', detail: v });
+      });
     this.petsFacade.pageCount$.pipe(takeUntil(this.destroy$)).subscribe(v => this.totalPages.set(v));
     this.petsFacade.currentPage$.pipe(takeUntil(this.destroy$)).subscribe(v => this.currentPage.set(v));
     this.petsFacade.total$.pipe(takeUntil(this.destroy$)).subscribe(v => this.totalElements.set(v));
@@ -101,21 +107,35 @@ export class ListPetsComponent implements OnInit, OnDestroy {
   deletePet(pet: Pet): void {
     if (this.deletingId() === pet.id) return;
 
-    const confirmed = confirm(`Tem certeza que deseja excluir o pet "${pet.nome}"? Esta ação não pode ser desfeita.`);
-    if (!confirmed) return;
+    this.confirmationService.confirm({
+      header: 'Confirmar exclusão',
+      message: `Tem certeza que deseja excluir o pet "${pet.nome}"? Esta ação não pode ser desfeita.`,
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: 'Excluir',
+      rejectLabel: 'Cancelar',
+      acceptButtonStyleClass: 'p-button-danger',
+      rejectButtonStyleClass: 'p-button-text',
+      accept: () => {
+        this.deletingId.set(pet.id);
 
-    this.deletingId.set(pet.id);
-    this.error.set(null);
-    this.successMessage.set(null);
-
-    this.petsFacade.deletePet(pet.id).subscribe({
-      next: () => {
-        this.successMessage.set('Pet excluído com sucesso!');
-        this.deletingId.set(null);
-      },
-      error: (err) => {
-        this.error.set(typeof err === 'string' ? err : 'Erro ao excluir pet');
-        this.deletingId.set(null);
+        this.petsFacade.deletePet(pet.id).subscribe({
+          next: () => {
+            this.messageService.add({
+              severity: 'success',
+              summary: 'Sucesso',
+              detail: 'Pet excluído com sucesso!'
+            });
+            this.deletingId.set(null);
+          },
+          error: (err) => {
+            this.messageService.add({
+              severity: 'error',
+              summary: 'Erro',
+              detail: typeof err === 'string' ? err : 'Erro ao excluir pet'
+            });
+            this.deletingId.set(null);
+          }
+        });
       }
     });
   }

@@ -6,6 +6,7 @@ import { TutoresFacade } from '../../services/tutores.facade';
 import { TutorDetail } from '../../models/tutor.models';
 import { CardModule } from 'primeng/card';
 import { ButtonModule } from 'primeng/button';
+import { ConfirmationService, MessageService } from 'primeng/api';
 
 @Component({
   selector: 'app-tutor-detail',
@@ -22,11 +23,11 @@ export class TutorDetailComponent implements OnInit {
   private tutoresFacade = inject(TutoresFacade);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
+  private confirmationService = inject(ConfirmationService);
+  private messageService = inject(MessageService);
 
   tutor = signal<TutorDetail | null>(null);
   isLoading = signal(false);
-  errorMessage = signal<string | null>(null);
-  successMessage = signal<string | null>(null);
   deleting = signal(false);
 
   ngOnInit(): void {
@@ -44,8 +45,12 @@ export class TutorDetailComponent implements OnInit {
       next: (tutor) => {
         this.tutor.set(tutor);
       },
-      error: () => {
-        this.errorMessage.set('Erro ao carregar dados do tutor');
+      error: (err: unknown) => {
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Erro',
+          detail: typeof err === 'string' ? err : 'Erro ao carregar dados do tutor'
+        });
       }
     });
   }
@@ -65,23 +70,37 @@ export class TutorDetailComponent implements OnInit {
     const tutor = this.tutor();
     if (!tutor || this.deleting()) return;
 
-    const confirmed = confirm(`Tem certeza que deseja excluir o tutor "${tutor.nome}"? Esta ação não pode ser desfeita.`);
-    if (!confirmed) return;
+    this.confirmationService.confirm({
+      header: 'Confirmar exclusão',
+      message: `Tem certeza que deseja excluir o tutor "${tutor.nome}"? Esta ação não pode ser desfeita.`,
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: 'Excluir',
+      rejectLabel: 'Cancelar',
+      acceptButtonStyleClass: 'p-button-danger',
+      rejectButtonStyleClass: 'p-button-text',
+      accept: () => {
+        this.deleting.set(true);
 
-    this.deleting.set(true);
-    this.errorMessage.set(null);
-    this.successMessage.set(null);
-
-    this.tutoresFacade.deleteTutor(tutor.id).subscribe({
-      next: () => {
-        this.successMessage.set('Tutor excluído com sucesso!');
-        setTimeout(() => {
-          this.router.navigate(['/tutores']);
-        }, 800);
-      },
-      error: (err) => {
-        this.deleting.set(false);
-        this.errorMessage.set(typeof err === 'string' ? err : 'Erro ao excluir tutor');
+        this.tutoresFacade.deleteTutor(tutor.id).subscribe({
+          next: () => {
+            this.messageService.add({
+              severity: 'success',
+              summary: 'Sucesso',
+              detail: 'Tutor excluído com sucesso!'
+            });
+            setTimeout(() => {
+              this.router.navigate(['/tutores']);
+            }, 800);
+          },
+          error: (err) => {
+            this.deleting.set(false);
+            this.messageService.add({
+              severity: 'error',
+              summary: 'Erro',
+              detail: typeof err === 'string' ? err : 'Erro ao excluir tutor'
+            });
+          }
+        });
       }
     });
   }

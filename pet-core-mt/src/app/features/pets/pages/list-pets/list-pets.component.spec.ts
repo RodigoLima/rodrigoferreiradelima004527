@@ -4,6 +4,7 @@ import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { of } from 'rxjs';
 import { PetsFacade } from '../../services/pets.facade';
 import { ListPetsComponent } from './list-pets.component';
+import { ConfirmationService, MessageService } from 'primeng/api';
 
 describe('ListPetsComponent', () => {
   it('deve criar e chamar fetchPets com query params', async () => {
@@ -13,6 +14,8 @@ describe('ListPetsComponent', () => {
       imports: [ListPetsComponent],
       providers: [
         provideNoopAnimations(),
+        ConfirmationService,
+        MessageService,
         { provide: Router, useValue: { navigate: vi.fn() } },
         { provide: ActivatedRoute, useValue: { snapshot: { queryParams: { nome: 'Rex', page: '2' } } } },
         {
