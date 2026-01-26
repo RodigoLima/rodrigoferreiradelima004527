@@ -27,16 +27,71 @@ export class AuthFacade {
   isAuthenticated$ = this.state$.pipe(map(state => state.isAuthenticated));
   accessToken$ = this.state$.pipe(map(state => state.accessToken));
 
+  constructor() {
+    this.storage.watchChanges().subscribe(stored => {
+      if (!stored) {
+        if (this.currentState.isAuthenticated) {
+          this.updateState(INITIAL_STATE);
+          this.router.navigate(['/login']);
+        }
+      } else if (!this.storage.isValid(stored)) {
+        if (this.currentState.isAuthenticated) {
+          this.updateState(INITIAL_STATE);
+          this.router.navigate(['/login']);
+        }
+      } else if (stored.accessToken !== this.currentState.accessToken || 
+                 stored.refreshToken !== this.currentState.refreshToken) {
+        this.updateState(INITIAL_STATE);
+        this.router.navigate(['/login']);
+      }
+    });
+  }
+
   get currentState(): AuthState {
     return this.stateSubject.value;
   }
 
   get isAuthenticated(): boolean {
+    const stored = this.storage.load();
+    if (!stored || !this.storage.isValid(stored)) {
+      if (this.currentState.isAuthenticated) {
+        this.updateState(INITIAL_STATE);
+      }
+      return false;
+    }
+
+    if (stored.accessToken !== this.currentState.accessToken || 
+        stored.refreshToken !== this.currentState.refreshToken) {
+      this.updateState(INITIAL_STATE);
+      this.router.navigate(['/login']);
+      return false;
+    }
+
     return this.currentState.isAuthenticated;
   }
 
   get accessToken(): string | null {
-    return this.currentState.accessToken;
+    const stored = this.storage.load();
+    if (!stored || !this.storage.isValid(stored)) {
+      if (this.currentState.isAuthenticated) {
+        this.updateState(INITIAL_STATE);
+      }
+      return null;
+    }
+
+    if (stored.accessToken !== this.currentState.accessToken || 
+        stored.refreshToken !== this.currentState.refreshToken) {
+      this.updateState(INITIAL_STATE);
+      this.router.navigate(['/login']);
+      return null;
+    }
+
+    const now = Date.now();
+    const accessTokenValid = !!this.currentState.accessToken && 
+                            !!this.currentState.expiresAt && 
+                            this.currentState.expiresAt > now;
+    
+    return accessTokenValid ? this.currentState.accessToken : null;
   }
 
   private loadInitialState(): AuthState {

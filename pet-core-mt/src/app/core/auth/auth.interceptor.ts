@@ -10,6 +10,11 @@ export const authInterceptor: HttpInterceptorFn = (req, next): Observable<HttpEv
   const authFacade = inject(AuthFacade);
   const token = authFacade.accessToken;
 
+  if (!token && !req.url.includes('/autenticacao/')) {
+    authFacade.logout();
+    return throwError(() => new Error('No valid token available'));
+  }
+
   if (token && !req.url.includes('/autenticacao/')) {
     req = req.clone({
       setHeaders: {
