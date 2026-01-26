@@ -2,7 +2,7 @@ import { Component, OnInit, OnDestroy, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { finalize, Subject, debounce, timer, distinctUntilChanged, takeUntil } from 'rxjs';
+import { finalize, Subject, debounce, timer, distinctUntilChanged, takeUntil, forkJoin, map, of, switchMap } from 'rxjs';
 import { TutoresFacade } from '../../services/tutores.facade';
 import { TutorDetail } from '../../models/tutor.models';
 import { PetsFacade } from '../../../pets/services/pets.facade';
@@ -50,11 +50,13 @@ export class TutorFormComponent implements OnInit, OnDestroy {
   previewUrl = signal<string | null>(null);
   tutorDetail = signal<TutorDetail | null>(null);
 
+  initialLinkedPetIds = signal<number[]>([]);
+  linkedPets = signal<Pet[]>([]);
   availablePets = signal<Pet[]>([]);
   petsLoading = signal(false);
   showLinkDialog = false;
   searchTermValue = '';
-  linkingPetId = signal<number | null>(null);
+  selectedPets = signal<Pet[]>([]);
 
   ngOnInit(): void {
     this.tutorForm = this.fb.group({
@@ -69,25 +71,25 @@ export class TutorFormComponent implements OnInit, OnDestroy {
     if (id) {
       this.tutorId.set(parseInt(id, 10));
       this.loadTutor();
-
-      this.petsFacade.pets$.pipe(takeUntil(this.destroy$)).subscribe(pets => {
-        this.availablePets.set(pets);
-      });
-
-      this.petsFacade.loading$.pipe(takeUntil(this.destroy$)).subscribe(loading => {
-        this.petsLoading.set(loading);
-      });
-
-      this.searchSubject
-        .pipe(
-          debounce(value => timer(value.trim() ? 500 : 0)),
-          distinctUntilChanged(),
-          takeUntil(this.destroy$)
-        )
-        .subscribe(searchValue => {
-          this.petsFacade.searchByName(searchValue);
-        });
     }
+
+    this.petsFacade.pets$.pipe(takeUntil(this.destroy$)).subscribe(pets => {
+      this.availablePets.set(pets);
+    });
+
+    this.petsFacade.loading$.pipe(takeUntil(this.destroy$)).subscribe(loading => {
+      this.petsLoading.set(loading);
+    });
+
+    this.searchSubject
+      .pipe(
+        debounce(value => timer(value.trim() ? 500 : 0)),
+        distinctUntilChanged(),
+        takeUntil(this.destroy$)
+      )
+      .subscribe(searchValue => {
+        this.petsFacade.searchByName(searchValue);
+      });
   }
 
   ngOnDestroy(): void {
@@ -105,6 +107,8 @@ export class TutorFormComponent implements OnInit, OnDestroy {
     ).subscribe({
       next: (tutor: TutorDetail) => {
         this.tutorDetail.set(tutor);
+        this.linkedPets.set(tutor.pets ?? []);
+        this.initialLinkedPetIds.set((tutor.pets ?? []).map(p => p.id));
         this.tutorForm.patchValue({
           nome: tutor.nome,
           telefone: tutor.telefone || '',
@@ -127,15 +131,16 @@ export class TutorFormComponent implements OnInit, OnDestroy {
   }
 
   openLinkDialog(): void {
-    if (!this.tutorId()) return;
     this.showLinkDialog = true;
     this.searchTermValue = '';
+    this.selectedPets.set([]);
     this.petsFacade.fetchPets({ size: 50 });
   }
 
   closeLinkDialog(): void {
     this.showLinkDialog = false;
     this.searchTermValue = '';
+    this.selectedPets.set([]);
   }
 
   onSearchChange(value: string): void {
@@ -144,46 +149,52 @@ export class TutorFormComponent implements OnInit, OnDestroy {
   }
 
   getAvailablePetsForLinking(): Pet[] {
-    const tutor = this.tutorDetail();
-    if (!tutor) return this.availablePets();
-
-    const linkedPetIds = new Set((tutor.pets ?? []).map(p => p.id));
+    const linkedPetIds = new Set(this.linkedPets().map(p => p.id));
     return this.availablePets().filter(pet => !linkedPetIds.has(pet.id));
   }
 
-  linkPet(petId: number): void {
-    const tutorId = this.tutorId();
-    if (!tutorId) return;
+  isPetSelected(petId: number): boolean {
+    return this.selectedPets().some(p => p.id === petId);
+  }
 
-    this.linkingPetId.set(petId);
-    this.tutoresFacade.linkPet(tutorId, petId).pipe(
-      finalize(() => {
-        this.linkingPetId.set(null);
-        this.loadTutor();
-      })
-    ).subscribe({
-      next: () => {
-        this.messageService.add({
-          severity: 'success',
-          summary: 'Sucesso',
-          detail: 'Pet vinculado com sucesso!'
-        });
-        this.closeLinkDialog();
-      },
-      error: () => {
-        this.messageService.add({
-          severity: 'error',
-          summary: 'Erro',
-          detail: 'Erro ao vincular pet'
-        });
-      }
+  togglePetSelection(pet: Pet): void {
+    const selected = this.selectedPets();
+    if (selected.some(p => p.id === pet.id)) {
+      this.selectedPets.set(selected.filter(p => p.id !== pet.id));
+      return;
+    }
+    this.selectedPets.set([...selected, pet]);
+  }
+
+  linkSelectedPets(): void {
+    const selected = this.selectedPets();
+    if (selected.length === 0) return;
+
+    const current = this.linkedPets();
+    const currentIds = new Set(current.map(p => p.id));
+
+    const toAdd: Pet[] = [];
+    for (const pet of selected) {
+      if (currentIds.has(pet.id)) continue;
+      toAdd.push(pet);
+      currentIds.add(pet.id);
+    }
+
+    if (toAdd.length === 0) {
+      this.closeLinkDialog();
+      return;
+    }
+
+    this.linkedPets.set([...current, ...toAdd]);
+    this.messageService.add({
+      severity: 'info',
+      summary: 'Atenção',
+      detail: `${toAdd.length} ${toAdd.length === 1 ? 'pet marcado' : 'pets marcados'} para vincular. Salve o tutor para persistir a alteração.`
     });
+    this.closeLinkDialog();
   }
 
   unlinkPet(petId: number): void {
-    const tutorId = this.tutorId();
-    if (!tutorId) return;
-
     this.confirmationService.confirm({
       header: 'Confirmar desvinculação',
       message: 'Deseja realmente desvincular este pet?',
@@ -193,27 +204,11 @@ export class TutorFormComponent implements OnInit, OnDestroy {
       acceptButtonStyleClass: 'p-button-danger',
       rejectButtonStyleClass: 'p-button-text',
       accept: () => {
-        this.linkingPetId.set(petId);
-        this.tutoresFacade.unlinkPet(tutorId, petId).pipe(
-          finalize(() => {
-            this.linkingPetId.set(null);
-            this.loadTutor();
-          })
-        ).subscribe({
-          next: () => {
-            this.messageService.add({
-              severity: 'success',
-              summary: 'Sucesso',
-              detail: 'Pet desvinculado com sucesso!'
-            });
-          },
-          error: () => {
-            this.messageService.add({
-              severity: 'error',
-              summary: 'Erro',
-              detail: 'Erro ao desvincular pet'
-            });
-          }
+        this.linkedPets.set(this.linkedPets().filter(p => p.id !== petId));
+        this.messageService.add({
+          severity: 'info',
+          summary: 'Atenção',
+          detail: 'Pet marcado para desvincular. Salve o tutor para persistir a alteração.'
         });
       }
     });
@@ -257,10 +252,16 @@ export class TutorFormComponent implements OnInit, OnDestroy {
       : this.tutoresFacade.createTutor(tutorData);
 
     operation.pipe(
+      switchMap(tutor => {
+        const tutorIdToUse = id || tutor.id;
+        return this.persistPetsChangesIfNeeded(tutorIdToUse).pipe(
+          map(() => ({ tutor, tutorIdToUse }))
+        );
+      }),
       finalize(() => this.isLoading.set(false))
     ).subscribe({
-      next: (tutor) => {
-        const tutorIdToUse = id || tutor.id;
+      next: ({ tutor, tutorIdToUse }) => {
+        this.initialLinkedPetIds.set(this.linkedPets().map(p => p.id));
         if (this.selectedFile()) {
           this.uploadPhoto(tutorIdToUse);
         } else {
@@ -336,5 +337,24 @@ export class TutorFormComponent implements OnInit, OnDestroy {
     if (digits.length <= 6) return `${digits.slice(0, 3)}.${digits.slice(3)}`;
     if (digits.length <= 9) return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6)}`;
     return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9, 11)}`;
+  }
+
+  private persistPetsChangesIfNeeded(tutorId: number) {
+    const initial = new Set(this.initialLinkedPetIds());
+    const current = new Set(this.linkedPets().map(p => p.id));
+
+    const toLink = [...current].filter(id => !initial.has(id));
+    const toUnlink = [...initial].filter(id => !current.has(id));
+
+    if (toLink.length === 0 && toUnlink.length === 0) {
+      return of(void 0);
+    }
+
+    const operations = [
+      ...toLink.map(petId => this.tutoresFacade.linkPet(tutorId, petId)),
+      ...toUnlink.map(petId => this.tutoresFacade.unlinkPet(tutorId, petId))
+    ];
+
+    return forkJoin(operations).pipe(map(() => void 0));
   }
 }

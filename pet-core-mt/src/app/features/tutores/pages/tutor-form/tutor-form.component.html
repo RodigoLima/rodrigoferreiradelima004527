@@ -148,62 +148,60 @@
             </div>
           </div>
 
-          @if (tutorId()) {
-            <div class="pt-6 border-t border-gray-200">
-              <div class="flex justify-between items-center mb-4">
-                <h2 class="text-xl font-semibold text-gray-900">Pets vinculados</h2>
-                <button
-                  type="button"
-                  pButton
-                  label="Vincular Pet"
-                  icon="pi pi-plus"
-                  (click)="openLinkDialog()"
-                  [disabled]="isLoading() || isUploading()"
-                  class="p-button-sm"
-                ></button>
-              </div>
+          <div class="pt-6 border-t border-gray-200">
+            <div class="flex justify-between items-center mb-4">
+              <h2 class="text-xl font-semibold text-gray-900">Pets vinculados</h2>
+              <button
+                type="button"
+                pButton
+                label="Vincular Pet"
+                icon="pi pi-plus"
+                (click)="openLinkDialog()"
+                [disabled]="isLoading() || isUploading()"
+                class="p-button-sm"
+              ></button>
+            </div>
 
-              @if (tutorDetail()?.pets?.length) {
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  @for (pet of tutorDetail()!.pets; track pet.id) {
-                    <div class="p-4 bg-gray-50 rounded-lg">
-                      <div class="flex items-start gap-4">
-                        @if (pet.foto?.url) {
-                          <img
-                            [src]="pet.foto?.url"
-                            [alt]="pet.nome"
-                            class="w-16 h-16 rounded-full object-cover"
-                          />
-                        }
-                        <div class="flex-1">
-                          <h3 class="font-semibold text-gray-900 mb-1">{{ pet.nome }}</h3>
-                          <p class="text-sm text-gray-600 mb-1">
-                            <span class="font-medium">Raça:</span> {{ pet.raca }}
+            @if (linkedPets().length) {
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                @for (pet of linkedPets(); track pet.id) {
+                  <div class="p-4 bg-gray-50 rounded-lg">
+                    <div class="flex items-start gap-4">
+                      @if (pet.foto?.url) {
+                        <img
+                          [src]="pet.foto?.url"
+                          [alt]="pet.nome"
+                          class="w-16 h-16 rounded-full object-cover"
+                        />
+                      }
+                      <div class="flex-1">
+                        <h3 class="font-semibold text-gray-900 mb-1">{{ pet.nome }}</h3>
+                        <p class="text-sm text-gray-600 mb-1">
+                          <span class="font-medium">Raça:</span> {{ pet.raca }}
+                        </p>
+                        @if (pet.idade !== undefined && pet.idade !== null) {
+                          <p class="text-sm text-gray-600 mb-3">
+                            <span class="font-medium">Idade:</span> {{ pet.idade }} {{ pet.idade === 1 ? 'ano' : 'anos' }}
                           </p>
-                          @if (pet.idade !== undefined && pet.idade !== null) {
-                            <p class="text-sm text-gray-600 mb-3">
-                              <span class="font-medium">Idade:</span> {{ pet.idade }} {{ pet.idade === 1 ? 'ano' : 'anos' }}
-                            </p>
-                          }
-                          <button
-                            type="button"
-                            pButton
-                            label="Desvincular"
-                            icon="pi pi-times"
-                            (click)="unlinkPet(pet.id)"
-                            [disabled]="linkingPetId() === pet.id || isLoading() || isUploading()"
-                            class="p-button-sm p-button-danger"
-                          ></button>
-                        </div>
+                        }
+                        <button
+                          type="button"
+                          pButton
+                          label="Desvincular"
+                          icon="pi pi-times"
+                          (click)="unlinkPet(pet.id)"
+                          [disabled]="isLoading() || isUploading()"
+                          class="p-button-sm p-button-danger"
+                        ></button>
                       </div>
                     </div>
-                  }
-                </div>
-              } @else {
-                <p class="text-gray-600">Nenhum pet vinculado ainda.</p>
-              }
-            </div>
-          }
+                  </div>
+                }
+              </div>
+            } @else {
+              <p class="text-gray-600">Nenhum pet vinculado ainda.</p>
+            }
+          </div>
 
           <div class="flex gap-4 justify-end pt-4">
             <button
@@ -262,7 +260,13 @@
           </p>
         } @else {
           @for (pet of getAvailablePetsForLinking(); track pet.id) {
-            <div class="p-4 bg-gray-50 rounded-lg flex items-center justify-between">
+            <div class="p-4 bg-gray-50 rounded-lg flex items-center gap-4">
+              <input
+                type="checkbox"
+                class="h-4 w-4"
+                [checked]="isPetSelected(pet.id)"
+                (change)="togglePetSelection(pet)"
+              />
               <div class="flex items-center gap-4 flex-1">
                 @if (pet.foto?.url) {
                   <img
@@ -276,19 +280,34 @@
                   <p class="text-sm text-gray-600">{{ pet.raca }}</p>
                 </div>
               </div>
-              <button
-                type="button"
-                pButton
-                label="Vincular"
-                icon="pi pi-plus"
-                (click)="linkPet(pet.id)"
-                [disabled]="linkingPetId() === pet.id"
-                class="p-button-sm"
-              ></button>
             </div>
           }
         }
       </div>
     }
+
+    <div class="flex items-center justify-between gap-3 pt-4 border-t border-gray-200">
+      <span class="text-sm text-gray-600">
+        {{ selectedPets().length }} selecionado(s)
+      </span>
+      <div class="flex gap-2">
+        <button
+          type="button"
+          pButton
+          label="Cancelar"
+          class="p-button-text"
+          (click)="closeLinkDialog()"
+          [disabled]="isLoading() || isUploading()"
+        ></button>
+        <button
+          type="button"
+          pButton
+          label="Vincular selecionados"
+          icon="pi pi-check"
+          (click)="linkSelectedPets()"
+          [disabled]="selectedPets().length === 0 || isLoading() || isUploading()"
+        ></button>
+      </div>
+    </div>
   </div>
 </p-dialog>
