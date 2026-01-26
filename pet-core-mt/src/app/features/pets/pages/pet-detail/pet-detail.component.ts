@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Subject, catchError, distinctUntilChanged, forkJoin, map, of, takeUntil } from 'rxjs';
+import { Subject, catchError, forkJoin, of, takeUntil } from 'rxjs';
 import { PetsFacade } from '../../services/pets.facade';
 import { PetDetail } from '../../models/pet.models';
 import { TutoresApiService } from '../../../tutores/services/tutores-api.service';
@@ -29,6 +29,7 @@ export class PetDetailComponent implements OnInit, OnDestroy {
   private confirmationService = inject(ConfirmationService);
   private messageService = inject(MessageService);
   private destroy$ = new Subject<void>();
+  private lastTutorIds: number[] = [];
 
   pet = signal<PetDetail | null>(null);
   tutores = signal<TutorDetail[]>([]);
@@ -39,24 +40,25 @@ export class PetDetailComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.petsFacade.petDetail$
       .pipe(
-        takeUntil(this.destroy$),
-        map(pet => {
-          if (!pet) {
-            return { pet: null, tutorIds: [] as number[] };
-          }
-
-          const tutorIds = Array.from(new Set((pet.tutores ?? []).map(t => t.id).filter(id => typeof id === 'number')));
-          return { pet, tutorIds };
-        }),
-        distinctUntilChanged((a, b) => JSON.stringify(a.tutorIds) === JSON.stringify(b.tutorIds) && a.pet?.id === b.pet?.id)
+        takeUntil(this.destroy$)
       )
-      .subscribe(({ pet, tutorIds }) => {
+      .subscribe((pet) => {
         this.pet.set(pet);
+        const tutorIds = pet
+          ? Array.from(new Set((pet.tutores ?? []).map(t => t.id).filter(id => typeof id === 'number')))
+          : [];
+
         if (!pet || tutorIds.length === 0) {
+          this.lastTutorIds = [];
           this.tutores.set([]);
           this.tutoresLoading.set(false);
           return;
         }
+
+        if (this.areIdsEqual(this.lastTutorIds, tutorIds)) {
+          return;
+        }
+        this.lastTutorIds = tutorIds;
 
         this.tutoresLoading.set(true);
         forkJoin(
@@ -74,7 +76,7 @@ export class PetDetailComponent implements OnInit, OnDestroy {
       });
     this.petsFacade.petDetailLoading$.pipe(takeUntil(this.destroy$)).subscribe(v => this.loading.set(v));
     this.petsFacade.petDetailError$
-      .pipe(distinctUntilChanged(), takeUntil(this.destroy$))
+      .pipe(takeUntil(this.destroy$))
       .subscribe(v => {
         if (!v) return;
         this.messageService.add({ severity: 'error', summary: 'Erro', detail: v });
@@ -141,5 +143,13 @@ export class PetDetailComponent implements OnInit, OnDestroy {
         });
       }
     });
+  }
+
+  private areIdsEqual(a: number[], b: number[]): boolean {
+    if (a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i++) {
+      if (a[i] !== b[i]) return false;
+    }
+    return true;
   }
 }
