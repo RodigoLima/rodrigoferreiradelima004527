@@ -9,119 +9,116 @@
     ></button>
   </div>
 
-  @if (loading()) {
-    <div class="text-center py-12">
-      <p class="text-gray-600">Carregando detalhes do pet...</p>
-    </div>
-  } @else {
-    @if (pet(); as petData) {
-      <div class="max-w-4xl mx-auto">
-        <p-card>
-          <ng-template pTemplate="header">
-            <div class="w-full h-64 bg-gray-200 flex items-center justify-center overflow-hidden">
-              @if (petData.foto?.url) {
+  <div class="max-w-4xl mx-auto">
+    @if (isLoading()) {
+      <div class="text-center py-12">
+        <p class="text-gray-600">Carregando dados do pet...</p>
+      </div>
+    } @else if (pet(); as petData) {
+      <p-card>
+        <ng-template pTemplate="header">
+          <div class="p-4 flex justify-between items-center">
+            <h1 class="text-3xl font-bold text-gray-900">{{ petData.nome }}</h1>
+            <div class="flex gap-2">
+              <button
+                pButton
+                label="Editar"
+                icon="pi pi-pencil"
+                (click)="editPet()"
+                [disabled]="deleting()"
+              ></button>
+              <button
+                pButton
+                label="Excluir"
+                icon="pi pi-trash"
+                (click)="deletePet()"
+                class="p-button-danger"
+                [disabled]="deleting()"
+              ></button>
+            </div>
+          </div>
+        </ng-template>
+
+        <div class="space-y-6">
+          @if (petData.foto?.url) {
+            <div class="flex justify-center">
+              <div class="w-64 h-64 bg-gray-200 rounded-lg overflow-hidden">
                 <img
-                  [src]="petData.foto?.url"
+                  [src]="petData.foto!.url"
                   [alt]="petData.nome"
-                  class="w-full h-64 object-cover"
+                  class="w-full h-full object-cover"
                 />
-              } @else {
-                <span class="text-gray-400 text-lg">Sem foto</span>
-              }
-            </div>
-          </ng-template>
-
-          <div class="space-y-6">
-            <div class="flex items-center justify-between gap-3">
-              <h1 class="text-4xl font-bold text-gray-900 mb-0">{{ petData.nome }}</h1>
-              <div class="flex gap-2">
-                <button
-                  pButton
-                  label="Editar"
-                  icon="pi pi-pencil"
-                  (click)="editPet()"
-                  class="p-button-sm"
-                  [disabled]="deleting()"
-                ></button>
-                <button
-                  pButton
-                  label="Excluir"
-                  icon="pi pi-trash"
-                  (click)="deletePet()"
-                  class="p-button-sm p-button-danger"
-                  [disabled]="deleting()"
-                ></button>
               </div>
             </div>
+          }
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <span class="font-medium text-gray-700">Raça:</span>
+              <p class="text-gray-900">{{ petData.raca }}</p>
+            </div>
+
+            @if (petData.idade !== undefined && petData.idade !== null) {
               <div>
-                <p class="text-sm text-gray-500 mb-1">Raça</p>
-                <p class="text-lg font-medium text-gray-900">{{ petData.raca }}</p>
-              </div>
-
-              @if (petData.idade !== undefined && petData.idade !== null) {
-                <div>
-                  <p class="text-sm text-gray-500 mb-1">Idade</p>
-                  <p class="text-lg font-medium text-gray-900">
-                    {{ petData.idade }} {{ petData.idade === 1 ? 'ano' : 'anos' }}
-                  </p>
-                </div>
-              }
-            </div>
-
-            @if (petData.tutores && petData.tutores.length > 0) {
-              <div class="mt-8 pt-6 border-t border-gray-200">
-                <h2 class="text-2xl font-semibold text-gray-900 mb-4">Tutores</h2>
-
-                @if (tutoresLoading()) {
-                  <div class="text-center py-6">
-                    <p class="text-gray-600">Carregando tutores...</p>
-                  </div>
-                } @else {
-                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    @for (tutor of tutores(); track tutor.id) {
-                      <div class="p-4 bg-gray-50 rounded-lg">
-                        <div class="flex items-start gap-4">
-                          @if (tutor.foto?.url) {
-                            <img
-                              [src]="tutor.foto?.url"
-                              [alt]="tutor.nome"
-                              class="w-16 h-16 rounded-full object-cover"
-                            />
-                          }
-                          <div class="flex-1">
-                            <h3 class="font-semibold text-gray-900 mb-2">{{ tutor.nome }}</h3>
-                            @if (tutor.telefone) {
-                              <p class="text-sm text-gray-600 mb-1">
-                                <span class="font-medium">Telefone:</span> {{ tutor.telefone }}
-                              </p>
-                            }
-                            @if (tutor.email) {
-                              <p class="text-sm text-gray-600 mb-1">
-                                <span class="font-medium">Email:</span> {{ tutor.email }}
-                              </p>
-                            }
-                            @if (tutor.endereco) {
-                              <p class="text-sm text-gray-600">
-                                <span class="font-medium">Endereço:</span> {{ tutor.endereco }}
-                              </p>
-                            }
-                          </div>
-                        </div>
-                      </div>
-                    }
-                  </div>
-                }
+                <span class="font-medium text-gray-700">Idade:</span>
+                <p class="text-gray-900">
+                  {{ petData.idade }} {{ petData.idade === 1 ? 'ano' : 'anos' }}
+                </p>
               </div>
             }
           </div>
-        </p-card>
-      </div>
+
+          <div class="mt-8 pt-6 border-t border-gray-200">
+            <h2 class="text-2xl font-semibold text-gray-900 mb-4">Tutores</h2>
+
+            @if (tutoresLoading()) {
+              <div class="text-center py-6">
+                <p class="text-gray-600">Carregando dados dos tutores...</p>
+              </div>
+            } @else if (tutores().length > 0) {
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                @for (tutor of tutores(); track tutor.id) {
+                  <div class="p-4 bg-gray-50 rounded-lg">
+                    <div class="flex items-start gap-4">
+                      @if (tutor.foto?.url) {
+                        <img
+                          [src]="tutor.foto?.url"
+                          [alt]="tutor.nome"
+                          class="w-16 h-16 rounded-full object-cover"
+                        />
+                      }
+                      <div class="flex-1">
+                        <h3 class="font-semibold text-gray-900 mb-2">{{ tutor.nome }}</h3>
+                        @if (tutor.telefone) {
+                          <p class="text-sm text-gray-600 mb-1">
+                            <span class="font-medium">Telefone:</span> {{ tutor.telefone }}
+                          </p>
+                        }
+                        @if (tutor.email) {
+                          <p class="text-sm text-gray-600 mb-1">
+                            <span class="font-medium">Email:</span> {{ tutor.email }}
+                          </p>
+                        }
+                        @if (tutor.endereco) {
+                          <p class="text-sm text-gray-600">
+                            <span class="font-medium">Endereço:</span> {{ tutor.endereco }}
+                          </p>
+                        }
+                      </div>
+                    </div>
+                  </div>
+                }
+              </div>
+            } @else {
+              <p class="text-gray-600">Nenhum tutor vinculado ainda.</p>
+            }
+          </div>
+        </div>
+      </p-card>
     } @else {
       <div class="text-center py-12">
         <p class="text-gray-600">Pet não encontrado.</p>
       </div>
     }
-  }
+  </div>
 </div>
