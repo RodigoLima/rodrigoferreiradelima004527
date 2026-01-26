@@ -66,3 +66,59 @@
   @apply hover:bg-gray-100;
 }
 
+@utility page-title {
+  @apply text-2xl sm:text-3xl font-semibold text-gray-900 tracking-tight;
+}
+
+@utility page-subtitle {
+  @apply text-sm sm:text-base text-gray-600;
+}
+
+@utility toolbar {
+  @apply card p-4;
+}
+
+@utility field-label {
+  @apply block text-sm font-medium text-gray-700;
+}
+
+@utility field-hint {
+  @apply text-xs text-gray-500;
+}
+
+@utility field-error {
+  @apply text-sm text-red-600;
+}
+
+@utility file-input {
+  @apply block w-full text-sm text-gray-600;
+  @apply file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold;
+  @apply file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100;
+}
+
+@layer components {
+  .p-card {
+    @apply rounded-2xl overflow-hidden shadow-soft ring-1 ring-gray-200 bg-white;
+  }
+
+  .p-button {
+    @apply rounded-xl;
+  }
+
+  .p-inputtext {
+    @apply rounded-xl;
+  }
+
+  .p-paginator .p-paginator-pages .p-paginator-page {
+    @apply rounded-lg;
+  }
+
+  .p-dialog .p-dialog-header {
+    @apply rounded-t-2xl;
+  }
+
+  .p-dialog .p-dialog-content {
+    @apply rounded-b-2xl;
+  }
+}
+

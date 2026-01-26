@@ -5,7 +5,7 @@
       label="Voltar"
       icon="pi pi-arrow-left"
       (click)="cancel()"
-      class="mb-4"
+      class="mb-4 w-full sm:w-auto"
     ></button>
   </div>
 
@@ -25,111 +25,106 @@
         </div>
       } @else {
         <form [formGroup]="petForm" (ngSubmit)="onSubmit()" class="space-y-6">
-          <div class="space-y-2">
-            <label for="nome" class="block text-sm font-medium text-gray-700">
-              Nome <span class="text-red-500">*</span>
-            </label>
-            <input
-              id="nome"
-              type="text"
-              pInputText
-              formControlName="nome"
-              class="w-full"
-              [class.border-red-500]="petForm.get('nome')?.invalid && petForm.get('nome')?.touched"
-              placeholder="Digite o nome do pet"
-            />
-            @if (petForm.get('nome')?.invalid && petForm.get('nome')?.touched) {
-              <span class="text-sm text-red-600">
-                @if (petForm.get('nome')?.errors?.['required']) {
-                  Nome é obrigatório
-                }
-              </span>
-            }
-          </div>
-
-          <div class="space-y-2">
-            <label for="raca" class="block text-sm font-medium text-gray-700">
-              Raça <span class="text-red-500">*</span>
-            </label>
-            <input
-              id="raca"
-              type="text"
-              pInputText
-              formControlName="raca"
-              class="w-full"
-              [class.border-red-500]="petForm.get('raca')?.invalid && petForm.get('raca')?.touched"
-              placeholder="Digite a raça do pet"
-            />
-            @if (petForm.get('raca')?.invalid && petForm.get('raca')?.touched) {
-              <span class="text-sm text-red-600">
-                @if (petForm.get('raca')?.errors?.['required']) {
-                  Raça é obrigatória
-                }
-              </span>
-            }
-          </div>
-
-          <div class="space-y-2">
-            <label for="idade" class="block text-sm font-medium text-gray-700">
-              Idade
-            </label>
-            <input
-              id="idade"
-              type="number"
-              pInputText
-              formControlName="idade"
-              min="1"
-              placeholder="Digite a idade em anos"
-              class="w-full"
-              [class.border-red-500]="petForm.get('idade')?.invalid && petForm.get('idade')?.touched"
-            />
-            @if (petForm.get('idade')?.invalid && petForm.get('idade')?.touched) {
-              <span class="text-sm text-red-600">
-                @if (petForm.get('idade')?.errors?.['min']) {
-                  Idade deve ser maior ou igual a 0
-                }
-              </span>
-            }
-          </div>
-
-          <div class="space-y-2">
-            <label for="foto" class="block text-sm font-medium text-gray-700">
-              Foto
-            </label>
-            <div class="flex flex-col gap-4">
-              @if (previewUrl()) {
-                <div class="w-full h-64 bg-gray-200 rounded-lg overflow-hidden">
-                  <img
-                    [src]="previewUrl()"
-                    alt="Preview"
-                    class="w-full h-64 object-cover"
-                  />
-                </div>
-              }
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="space-y-2">
+              <label for="nome" class="field-label">
+                Nome <span class="text-red-500">*</span>
+              </label>
               <input
-                id="foto"
-                type="file"
-                accept="image/*"
-                (change)="onFileSelected($event)"
-                class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                id="nome"
+                type="text"
+                pInputText
+                formControlName="nome"
+                class="w-full"
+                [class.border-red-500]="petForm.get('nome')?.invalid && petForm.get('nome')?.touched"
+                placeholder="Digite o nome do pet"
               />
+              @if (petForm.get('nome')?.invalid && petForm.get('nome')?.touched) {
+                <span class="field-error">
+                  @if (petForm.get('nome')?.errors?.['required']) {
+                    Nome é obrigatório
+                  }
+                </span>
+              }
+            </div>
+
+            <div class="space-y-2">
+              <label for="raca" class="field-label">
+                Raça <span class="text-red-500">*</span>
+              </label>
+              <input
+                id="raca"
+                type="text"
+                pInputText
+                formControlName="raca"
+                class="w-full"
+                [class.border-red-500]="petForm.get('raca')?.invalid && petForm.get('raca')?.touched"
+                placeholder="Digite a raça do pet"
+              />
+              @if (petForm.get('raca')?.invalid && petForm.get('raca')?.touched) {
+                <span class="field-error">
+                  @if (petForm.get('raca')?.errors?.['required']) {
+                    Raça é obrigatória
+                  }
+                </span>
+              }
+            </div>
+
+            <div class="space-y-2 md:col-span-2">
+              <label for="idade" class="field-label">Idade</label>
+              <input
+                id="idade"
+                type="number"
+                pInputText
+                formControlName="idade"
+                min="1"
+                placeholder="Digite a idade em anos"
+                class="w-full"
+                [class.border-red-500]="petForm.get('idade')?.invalid && petForm.get('idade')?.touched"
+              />
+              @if (petForm.get('idade')?.invalid && petForm.get('idade')?.touched) {
+                <span class="field-error">
+                  @if (petForm.get('idade')?.errors?.['min']) {
+                    Idade deve ser maior ou igual a 0
+                  }
+                </span>
+              }
+            </div>
+
+            <div class="space-y-2 md:col-span-2">
+              <label for="foto" class="field-label">Foto</label>
+              <div class="flex flex-col gap-4">
+                @if (previewUrl()) {
+                  <div class="w-full h-64 bg-gray-200 rounded-xl overflow-hidden ring-1 ring-gray-200">
+                    <img [src]="previewUrl()" alt="Preview" class="w-full h-64 object-cover" />
+                  </div>
+                }
+                <input
+                  id="foto"
+                  type="file"
+                  accept="image/*"
+                  (change)="onFileSelected($event)"
+                  class="file-input"
+                />
+              </div>
             </div>
           </div>
 
-          <div class="flex gap-4 justify-end pt-4">
+          <div class="flex flex-col-reverse sm:flex-row gap-3 justify-end pt-4">
             <button
               type="button"
               pButton
               label="Cancelar"
               (click)="cancel()"
               [disabled]="isLoading() || isUploading()"
-              class="p-button-secondary"
+              class="p-button-secondary w-full sm:w-auto"
             ></button>
             <button
               type="submit"
               pButton
               label="{{ isLoading() || isUploading() ? 'Salvando...' : 'Salvar' }}"
               [disabled]="petForm.invalid || isLoading() || isUploading()"
+              class="w-full sm:w-auto"
             ></button>
           </div>
         </form>

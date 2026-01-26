@@ -5,7 +5,7 @@
       label="Voltar"
       icon="pi pi-arrow-left"
       (click)="goBack()"
-      class="mb-4"
+      class="mb-4 w-full sm:w-auto"
     ></button>
   </div>
 
@@ -17,23 +17,24 @@
     } @else if (pet(); as petData) {
       <p-card>
         <ng-template pTemplate="header">
-          <div class="p-4 flex justify-between items-center">
+          <div class="p-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <h1 class="text-3xl font-bold text-gray-900">{{ petData.nome }}</h1>
-            <div class="flex gap-2">
+            <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
               <button
                 pButton
                 label="Editar"
                 icon="pi pi-pencil"
                 (click)="editPet()"
                 [disabled]="deleting()"
+                class="w-full sm:w-auto"
               ></button>
               <button
                 pButton
                 label="Excluir"
                 icon="pi pi-trash"
                 (click)="deletePet()"
-                class="p-button-danger"
                 [disabled]="deleting()"
+                class="p-button-danger w-full sm:w-auto"
               ></button>
             </div>
           </div>
@@ -78,7 +79,7 @@
             } @else if (tutores().length > 0) {
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 @for (tutor of tutores(); track tutor.id) {
-                  <div class="p-4 bg-gray-50 rounded-lg">
+                  <div class="p-4 bg-white rounded-xl ring-1 ring-gray-200/70">
                     <div class="flex items-start gap-4">
                       @if (tutor.foto?.url) {
                         <img
