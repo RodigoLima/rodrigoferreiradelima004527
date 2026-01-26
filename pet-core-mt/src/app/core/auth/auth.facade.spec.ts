@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
-import { firstValueFrom, of } from 'rxjs';
+import { EMPTY, firstValueFrom, of } from 'rxjs';
 import { AuthApiService } from './auth-api.service';
 import { AuthFacade } from './auth.facade';
 import { AuthStorageService } from './auth-storage.service';
@@ -9,7 +9,26 @@ import { AuthState } from './models/auth.models';
 describe('AuthFacade', () => {
   it('login deve persistir tokens e autenticar', async () => {
     const nowSpy = vi.spyOn(Date, 'now').mockReturnValue(1_000);
-    const storageSave = vi.fn();
+    let storedState: AuthState | null = null;
+
+    const storageSave = vi.fn((state: AuthState) => {
+      storedState = state;
+    });
+    const storageLoad = vi.fn(() => storedState);
+    const storageClear = vi.fn(() => {
+      storedState = null;
+    });
+    const storageWatchChanges = vi.fn(() => EMPTY);
+    const storageIsValid = vi.fn((state: AuthState | null) => {
+      if (!state) {
+        return false;
+      }
+      const now = Date.now();
+      if (state.refreshExpiresAt && state.refreshExpiresAt < now) {
+        return false;
+      }
+      return !!state.refreshToken;
+    });
 
     TestBed.configureTestingModule({
       providers: [
@@ -31,9 +50,11 @@ describe('AuthFacade', () => {
         {
           provide: AuthStorageService,
           useValue: {
-            load: vi.fn(() => null),
+            load: storageLoad,
             save: storageSave,
-            clear: vi.fn()
+            clear: storageClear,
+            watchChanges: storageWatchChanges,
+            isValid: storageIsValid
           }
         },
         { provide: Router, useValue: { navigate: vi.fn() } }
@@ -60,7 +81,32 @@ describe('AuthFacade', () => {
 
   it('deve iniciar deslogado quando refresh token estiver expirado no storage', () => {
     const nowSpy = vi.spyOn(Date, 'now').mockReturnValue(10_000);
-    const storageClear = vi.fn();
+    let storedState: AuthState | null = {
+      isAuthenticated: true,
+      accessToken: 'a',
+      refreshToken: 'r',
+      expiresAt: 9_000,
+      refreshExpiresAt: 9_000
+    };
+
+    const storageLoad = vi.fn(() => storedState);
+    const storageSave = vi.fn((state: AuthState) => {
+      storedState = state;
+    });
+    const storageClear = vi.fn(() => {
+      storedState = null;
+    });
+    const storageWatchChanges = vi.fn(() => EMPTY);
+    const storageIsValid = vi.fn((state: AuthState | null) => {
+      if (!state) {
+        return false;
+      }
+      const now = Date.now();
+      if (state.refreshExpiresAt && state.refreshExpiresAt < now) {
+        return false;
+      }
+      return !!state.refreshToken;
+    });
 
     TestBed.configureTestingModule({
       providers: [
@@ -69,15 +115,11 @@ describe('AuthFacade', () => {
         {
           provide: AuthStorageService,
           useValue: {
-            load: vi.fn(() => ({
-              isAuthenticated: true,
-              accessToken: 'a',
-              refreshToken: 'r',
-              expiresAt: 9_000,
-              refreshExpiresAt: 9_000
-            })),
-            save: vi.fn(),
-            clear: storageClear
+            load: storageLoad,
+            save: storageSave,
+            clear: storageClear,
+            watchChanges: storageWatchChanges,
+            isValid: storageIsValid
           }
         },
         { provide: Router, useValue: { navigate: vi.fn() } }

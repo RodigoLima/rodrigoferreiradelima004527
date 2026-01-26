@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router } from '@angular/router';
 import { of } from 'rxjs';
-import { AuthFacade } from '../../core/auth/auth.facade';
+import { AuthFacade } from '../../../../core/auth/auth.facade';
 import { LoginComponent } from './login.component';
 import { MessageService } from 'primeng/api';
 

@@ -1,9 +1,9 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router, ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { finalize } from 'rxjs';
-import { AuthFacade } from '../../core/auth/auth.facade';
+import { AuthFacade } from '../../../../core/auth/auth.facade';
 import { MessageService } from 'primeng/api';
 
 @Component({
@@ -42,17 +42,18 @@ export class LoginComponent {
       .login(credentials)
       .pipe(finalize(() => this.isLoading.set(false)))
       .subscribe({
-      next: () => {
-        const returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/';
-        this.router.navigate([returnUrl]);
-      },
-      error: (error: unknown) => {
-        const detail =
-          typeof error === 'string' && error.trim().length > 0
-            ? error
-            : 'Erro ao fazer login. Verifique suas credenciais.';
-        this.messageService.add({ severity: 'error', summary: 'Erro', detail });
-      }
-    });
+        next: () => {
+          const returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/';
+          this.router.navigate([returnUrl]);
+        },
+        error: (error: unknown) => {
+          const detail =
+            typeof error === 'string' && error.trim().length > 0
+              ? error
+              : 'Erro ao fazer login. Verifique suas credenciais.';
+          this.messageService.add({ severity: 'error', summary: 'Erro', detail });
+        }
+      });
   }
 }
+

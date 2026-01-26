@@ -3,6 +3,7 @@ import { Router } from '@angular/router';
 import { firstValueFrom, isObservable, of } from 'rxjs';
 import { AuthFacade } from './auth.facade';
 import { authGuard } from './auth.guard';
+import { AuthStorageService } from './auth-storage.service';
 
 function resolveGuardResult<T>(value: unknown): Promise<T> {
   if (isObservable(value)) {
@@ -18,7 +19,20 @@ describe('authGuard', () => {
     TestBed.configureTestingModule({
       providers: [
         { provide: Router, useValue: { navigate: routerNavigate } },
-        { provide: AuthFacade, useValue: { isAuthenticated$: of(true) } }
+        { provide: AuthFacade, useValue: { isAuthenticated$: of(true) } },
+        {
+          provide: AuthStorageService,
+          useValue: {
+            load: vi.fn(() => ({
+              isAuthenticated: true,
+              accessToken: 'a',
+              refreshToken: 'r',
+              expiresAt: Date.now() + 10_000,
+              refreshExpiresAt: Date.now() + 20_000
+            })),
+            isValid: vi.fn(() => true)
+          }
+        }
       ]
     });
 
@@ -36,7 +50,20 @@ describe('authGuard', () => {
     TestBed.configureTestingModule({
       providers: [
         { provide: Router, useValue: { navigate: routerNavigate } },
-        { provide: AuthFacade, useValue: { isAuthenticated$: of(false) } }
+        { provide: AuthFacade, useValue: { isAuthenticated$: of(false) } },
+        {
+          provide: AuthStorageService,
+          useValue: {
+            load: vi.fn(() => ({
+              isAuthenticated: true,
+              accessToken: 'a',
+              refreshToken: 'r',
+              expiresAt: Date.now() + 10_000,
+              refreshExpiresAt: Date.now() + 20_000
+            })),
+            isValid: vi.fn(() => true)
+          }
+        }
       ]
     });
 
