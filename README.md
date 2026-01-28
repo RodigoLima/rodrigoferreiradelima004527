@@ -22,7 +22,8 @@ SPA em Angular 21 para gerenciamento de pets e tutores (autenticação JWT, lazy
 3. [Como executar os testes](#como-executar-os-testes)
 4. [Deploy](#deploy)
 5. [Arquitetura](#arquitetura)
-6. [Estrutura do projeto](#estrutura-do-projeto)
+6. [Decisões técnicas](#decisões-técnicas)
+7. [Estrutura do projeto](#estrutura-do-projeto)
 
 ---
 
@@ -110,6 +111,20 @@ Componentes  →  Facades  →  API Services  →  Interceptor  →  Backend
 - **Lazy loading:** rotas de pets e tutores carregadas sob demanda (`loadChildren`).
 - **Estado:** um facade por domínio (Pets, Tutores, Auth); BehaviorSubject + Observables; sem store global.
 - **Features:** pastas em `features/` com `models`, `pages` e `services`; novas features seguem o mesmo padrão e são registradas em `app.routes.ts` via `loadChildren`.
+
+---
+
+## Decisões técnicas
+
+| Decisão | Motivo |
+|--------|--------|
+| **Facade + BehaviorSubject** | Um facade por domínio concentra estado e chamadas à API; BehaviorSubject oferece cache em memória e reatividade sem lib extra (NgRx). |
+| **Rotas com loadChildren** | Lazy loading reduz o bundle inicial; `/pets` e `/tutores` só carregam quando acessados. |
+| **Interceptor com refresh em 401** | Renovação transparente do token evita logout a cada expiração; fila com BehaviorSubject evita múltiplos refreshes simultâneos. |
+| **Vitest** | Testes rápidos, boa integração com Angular e uso de padrões modernos (describe/it). |
+| **PrimeNG + Tailwind** | UI consistente e acessível (PrimeNG); layout responsivo e utilitários (Tailwind) com pouco CSS custom. |
+| **Docker multi-stage** | Build em Node e runtime só com Nginx + estáticos; imagem menor e sem dependências de build em produção. |
+| **Query params em listagens** | Filtros e página na URL permitem compartilhar e recarregar com o mesmo estado (nome, raça, page). |
 
 ---
 
