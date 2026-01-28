@@ -1,203 +1,88 @@
-# Pet Core MT - Sistema de Gerenciamento de Pets e Tutores
+# Pet Core MT
 
-SPA (Single Page Application) desenvolvida em Angular 21 para gerenciamento de pets e tutores, com autenticação JWT, lazy loading de rotas e arquitetura escalável baseada em Facades e BehaviorSubject.
+SPA em Angular 21 para gerenciamento de pets e tutores (autenticação JWT, lazy loading, Facades + BehaviorSubject).
 
-## 📋 Índice
+---
 
-- [Tecnologias](#tecnologias)
-- [Arquitetura](#arquitetura)
-- [Como Rodar Localmente](#como-rodar-localmente)
-- [Testes](#testes)
-- [Build e Deploy](#build-e-deploy)
-- [Estrutura do Projeto](#estrutura-do-projeto)
-- [Funcionalidades Implementadas](#funcionalidades-implementadas)
-- [Decisões e Limites](#decisões-e-limites)
+## Dados da Inscrição e Vaga
 
-## 🛠 Tecnologias
+| Campo | Valor |
+|-------|--------|
+| **Candidato** | Rodrigo Ferreira de Lima |
+| **E-mail** | ferreirarodrigo230@gmail.com |
+| **Vaga** | Engenheiro da Computação - Sênior |
+| **Projeto** | Projeto Desenvolvedor Front End |
 
-- **Angular 21** (standalone components, sem NgModules)
-- **TypeScript 5.9**
-- **TailwindCSS 4** (estilização)
-- **PrimeNG 21** (componentes UI)
-- **RxJS 7.8** (programação reativa)
-- **Vitest** (testes unitários)
-- **Docker** + **Nginx** (deploy)
+---
 
-## 🏗 Arquitetura
+## Índice
 
-### Padrão de Arquitetura em Camadas
+1. [Dependências](#dependências)
+2. [Como rodar localmente](#como-rodar-localmente)
+3. [Como executar os testes](#como-executar-os-testes)
+4. [Deploy](#deploy)
+5. [Arquitetura](#arquitetura)
+6. [Estrutura do projeto](#estrutura-do-projeto)
 
-O projeto segue uma arquitetura em camadas com separação clara de responsabilidades:
+---
 
-```
-┌─────────────────────────────────────────┐
-│         Componentes (Pages)            │
-│  (ListPets, PetDetail, PetForm, etc.) │
-└──────────────┬──────────────────────────┘
-               │
-               ▼
-┌─────────────────────────────────────────┐
-│            Facades                      │
-│  (PetsFacade, TutoresFacade, AuthFacade)│
-│  - BehaviorSubject para estado         │
-│  - Lógica de negócio                   │
-│  - Observables reativos                │
-└──────────────┬──────────────────────────┘
-               │
-               ▼
-┌─────────────────────────────────────────┐
-│         API Services                    │
-│  (PetsApiService, TutoresApiService)    │
-│  - Chamadas HTTP tipadas                │
-│  - Transformação de dados               │
-└──────────────┬──────────────────────────┘
-               │
-               ▼
-┌─────────────────────────────────────────┐
-│      HTTP Interceptors                  │
-│  (AuthInterceptor)                     │
-│  - Adiciona token JWT                   │
-│  - Refresh automático em 401            │
-└──────────────┬──────────────────────────┘
-               │
-               ▼
-┌─────────────────────────────────────────┐
-│         Backend API                     │
-│  (PetManagerAPI)                        │
-└─────────────────────────────────────────┘
-```
+## Dependências
 
-### Fluxo de Dados
+| Dependência | Versão | Uso |
+|-------------|--------|-----|
+| Node.js | 20+ | Build e servidor de desenvolvimento |
+| npm | 11.6+ | Instalação de pacotes |
+| API backend | — | `https://pet-manager-api.geia.vip` (dev e prod) |
 
-1. **Componente** → Chama método do **Facade**
-2. **Facade** → Gerencia estado via **BehaviorSubject** e chama **API Service**
-3. **API Service** → Faz requisição HTTP através do **HttpClient**
-4. **Interceptor** → Adiciona token de autenticação automaticamente
-5. **Backend** → Processa e retorna dados
-6. **Facade** → Atualiza estado e emite novos valores via Observable
-7. **Componente** → Reage às mudanças de estado via `async pipe` ou `subscribe`
+**Configuração da API:**  
+- Dev: `pet-core-mt/src/environments/environment.ts` → `apiBaseUrl`  
+- Prod: `pet-core-mt/src/environments/environment.prod.ts` → `apiBaseUrl`  
 
-### Lazy Loading de Rotas
+A aplicação **não sobe** a API; ela consome o backend na URL acima. Ajuste esses arquivos se usar outra base URL.
 
-As features são carregadas sob demanda usando lazy loading:
+---
 
-```typescript
-{
-  path: 'pets',
-  loadChildren: () => import('./features/pets/pets.routes').then(m => m.petsRoutes),
-  canActivate: [authGuard]
-}
-```
+## Como rodar localmente
 
-Isso reduz o bundle inicial e melhora o tempo de carregamento da aplicação.
+1. Entrar na pasta do frontend:
+   ```bash
+   cd pet-core-mt
+   ```
+2. Instalar dependências:
+   ```bash
+   npm install
+   ```
+3. Subir o servidor:
+   ```bash
+   npm start
+   ```
+4. Acessar no navegador: **http://localhost:4200**  
+   (após o login, a rota inicial é `/pets`.)
 
-### Gerenciamento de Estado com BehaviorSubject
+---
 
-Cada Facade mantém seu próprio estado usando `BehaviorSubject`:
+## Como executar os testes
 
-- **Estado imutável**: Novos estados são criados via spread operator
-- **Observables públicos**: Componentes se inscrevem via `async pipe`
-- **Estado centralizado**: Toda lógica de estado fica no Facade
-
-Exemplo:
-```typescript
-private stateSubject = new BehaviorSubject<PetsState>(INITIAL_STATE);
-state$ = this.stateSubject.asObservable();
-pets$ = this.state$.pipe(map(state => state.pets));
-```
-
-## 🚀 Como Rodar Localmente
-
-### Pré-requisitos
-
-- Node.js 20 ou superior
-- npm 11.6.2 ou superior
-- API Pet Manager disponível em `https://pet-manager-api.geia.vip` (usado tanto em teste quanto em produção)
-
-### Instalação
-
-1. Clone o repositório e entre no diretório do projeto:
-```bash
-cd pet-core-mt
-```
-
-2. Instale as dependências:
-```bash
-npm install
-```
-
-3. Configure a URL da API por ambiente (se necessário):
-   - Desenvolvimento: `src/environments/environment.ts` → `apiBaseUrl`
-   - Produção: `src/environments/environment.prod.ts` → `apiBaseUrl`
-
-4. Inicie o servidor de desenvolvimento:
-```bash
-npm start
-```
-
-Ou usando Angular CLI diretamente:
-```bash
-ng serve
-```
-
-5. Acesse a aplicação:
-   - Abra o navegador em `http://localhost:4200`
-   - A aplicação redireciona automaticamente para `/pets` após login
-
-### Variáveis de Ambiente
-
-Por padrão:
-
-- **Dev (`ng serve`)**: `apiBaseUrl = https://pet-manager-api.geia.vip` em `src/environments/environment.ts`
-- **Prod (`ng build` / Docker)**: `apiBaseUrl = https://pet-manager-api.geia.vip` em `src/environments/environment.prod.ts`
-
-Para alterar:
-
-1. Edite `src/environments/environment.ts` (desenvolvimento) e/ou `src/environments/environment.prod.ts` (produção)
-2. Gere novamente o build (e a imagem Docker, se aplicável) para aplicar o novo valor
-
-## 🧪 Testes
-
-### Executar Testes Unitários
+Na pasta `pet-core-mt`:
 
 ```bash
 npm test
 ```
 
-Ou usando Angular CLI:
-```bash
-ng test
-```
+Ambiente: **Vitest**. Cobrem facades, interceptors, guards, serviços HTTP e componentes (login, formulários, listagens).
 
-Os testes são executados com **Vitest** e incluem:
+---
 
-- Testes de Facades (estado e paginação)
-- Testes de Interceptors (autenticação e refresh)
-- Testes de Guards (proteção de rotas)
-- Testes de helpers HTTP (montagem de URL/params e tratamento de erro)
-- Testes de componentes (montagem, validação de formulário e fluxo de login)
+## Deploy
 
-## 📦 Build e Deploy
-
-### Build para Produção
+**Build de produção:** artefatos em `dist/pet-core-mt/browser/`.
 
 ```bash
+cd pet-core-mt
 npm run build
 ```
 
-O build gera os artefatos em `dist/pet-core-mt/browser/`.
-
-### Build para Desenvolvimento
-
-Se precisar gerar um build com as configurações de desenvolvimento:
-
-```bash
-ng build --configuration development
-```
-
-### Deploy com Docker 
-
-Build e execução apenas do frontend (Nginx servindo a SPA):
+**Container (todas as dependências isoladas):** imagem final só com Nginx + estáticos. Build multi-stage: estágio 1 usa Node para build; estágio 2 usa apenas `nginx:alpine` + os arquivos gerados.
 
 ```bash
 cd pet-core-mt
@@ -205,139 +90,45 @@ docker build -t pet-core-mt:latest .
 docker run --rm -p 8080:80 pet-core-mt:latest
 ```
 
-Depois:
+Acesso: **http://localhost:8080**.
 
-- Frontend: `http://localhost:8080`
+**Health checks (liveness/readiness):**  
+- `GET http://localhost:8080/healthz` → 200 "healthy"  
+- `GET http://localhost:8080/readyz` → 200 "ready"  
 
-O frontend consome a API em `https://pet-manager-api.geia.vip` (definida em `src/environments/environment.prod.ts`). Para trocar o endpoint, ajuste o arquivo e gere um novo build/imagem.
+---
 
-**Health checks**:
+## Arquitetura
 
-```bash
-curl http://localhost:8080/healthz
-curl http://localhost:8080/readyz
+Camadas: **Componentes (pages)** → **Facades** (estado via BehaviorSubject) → **API Services** (HTTP) → **Interceptor** (JWT + refresh em 401) → **Backend**.
+
+```
+Componentes  →  Facades  →  API Services  →  Interceptor  →  Backend
+                 (estado)     (HTTP)          (JWT)
 ```
 
-### Health Checks
+- **Lazy loading:** rotas de pets e tutores carregadas sob demanda (`loadChildren`).
+- **Estado:** um facade por domínio (Pets, Tutores, Auth); BehaviorSubject + Observables; sem store global.
+- **Features:** pastas em `features/` com `models`, `pages` e `services`; novas features seguem o mesmo padrão e são registradas em `app.routes.ts` via `loadChildren`.
 
-O container inclui health checks configurados:
+---
 
-- **`/healthz`**: Endpoint de liveness (saúde do container)
-- **`/readyz`**: Endpoint de readiness (pronto para receber tráfego)
-
-Ambos retornam `200 OK` quando o Nginx está funcionando.
-
-## 📁 Estrutura do Projeto
+## Estrutura do projeto
 
 ```
 pet-core-mt/
-├── src/
-│   ├── app/
-│   │   ├── core/                    # Infraestrutura central
-│   │   │   ├── auth/                # Autenticação JWT
-│   │   │   │   ├── auth-api.service.ts
-│   │   │   │   ├── auth.facade.ts
-│   │   │   │   ├── auth.guard.ts
-│   │   │   │   ├── auth.interceptor.ts
-│   │   │   │   └── auth-storage.service.ts
-│   │   │   ├── config/              # Configurações
-│   │   │   │   └── api.config.ts
-│   │   │   └── http/                # Helpers HTTP
-│   │   │       ├── error-handler.service.ts
-│   │   │       └── http-helper.service.ts
-│   │   ├── features/                # Features (lazy loaded)
-│   │   │   ├── pets/
-│   │   │   │   ├── models/
-│   │   │   │   ├── pages/
-│   │   │   │   │   ├── list-pets/
-│   │   │   │   │   ├── pet-detail/
-│   │   │   │   │   └── pet-form/
-│   │   │   │   ├── services/
-│   │   │   │   │   ├── pets-api.service.ts
-│   │   │   │   │   └── pets.facade.ts
-│   │   │   │   └── pets.routes.ts
-│   │   │   └── tutores/
-│   │   │       ├── models/
-│   │   │       ├── pages/
-│   │   │       │   ├── list-tutores/
-│   │   │       │   ├── tutor-detail/
-│   │   │       │   └── tutor-form/
-│   │   │       ├── services/
-│   │   │       │   ├── tutores-api.service.ts
-│   │   │       │   └── tutores.facade.ts
-│   │   │       └── tutores.routes.ts
-│   │   ├── pages/                   # Páginas públicas
-│   │   │   └── login/
-│   │   ├── shared/                   # Componentes compartilhados
-│   │   │   └── forms/
-│   │   │       ├── cpf-mask.directive.ts
-│   │   │       └── phone-mask.directive.ts
-│   │   ├── app.config.ts            # Configuração da aplicação
-│   │   ├── app.routes.ts            # Rotas principais
-│   │   └── app.html                 # Shell da aplicação
-│   ├── styles.css                    # Estilos globais
-│   └── index.html
-├── Dockerfile                        # Build multi-stage
-├── nginx.conf                        # Configuração Nginx
-├── package.json
+├── src/app/
+│   ├── core/               # Auth, config, HTTP
+│   │   ├── auth/
+│   │   ├── config/
+│   │   └── http/
+│   ├── features/           # Módulos lazy
+│   │   ├── auth/pages/login/
+│   │   ├── pets/           # models, pages, services, pets.routes.ts
+│   │   └── tutores/        # models, pages, services, tutores.routes.ts
+│   └── shared/forms/       # Diretivas (cpf, telefone)
+├── src/environments/       # apiBaseUrl por ambiente
+├── Dockerfile              # Multi-stage: Node build → Nginx runtime
+├── nginx.conf              # SPA + /healthz, /readyz
+└── package.json
 ```
-
-## ✅ Funcionalidades Implementadas
-
-### Autenticação
-- [x] Login com JWT
-- [x] Refresh automático de token
-- [x] Interceptor para adicionar token nas requisições
-- [x] Guard para proteger rotas privadas
-- [x] Armazenamento seguro de tokens (sessionStorage)
-
-### Feature Pets
-- [x] Listagem com paginação (10 por página)
-- [x] Busca por nome com debounce
-- [x] Detalhamento do pet
-- [x] Exibição de tutor(es) vinculado(s) no detalhe
-- [x] Cadastro de novo pet
-- [x] Edição de pet existente
-- [x] Upload de foto do pet
-- [x] Exclusão de pet com confirmação
-
-### Feature Tutores
-- [x] Listagem de tutores
-- [x] Detalhamento do tutor
-- [x] Cadastro de novo tutor
-- [x] Edição de tutor existente
-- [x] Upload de foto do tutor
-- [x] Máscara de telefone (diretiva)
-- [x] Vinculação de pet ao tutor
-- [x] Desvinculação de pet do tutor
-- [x] Exclusão de tutor com confirmação
-
-### Infraestrutura
-- [x] Configuração HTTP centralizada
-- [x] Tratamento de erros consistente
-- [x] Lazy loading de rotas
-- [x] Health checks (`/healthz` e `/readyz`)
-- [x] Dockerfile multi-stage otimizado
-- [x] Nginx configurado para SPA
-
-### UI/UX
-- [x] Layout responsivo com TailwindCSS
-- [x] Componentes PrimeNG para UI consistente
-- [x] Feedback visual (loading, erros, sucesso)
-- [x] Confirmações para ações destrutivas
-
-## 🎯 Decisões e Limites
-
-### Decisões Arquiteturais
-
-1. **Facade Pattern**: Escolhido para centralizar lógica de negócio e estado, facilitando testes e manutenção.
-
-2. **BehaviorSubject**: Usado em vez de NgRx para manter simplicidade, já que o estado é relativamente simples.
-
-3. **Standalone Components**: Angular 21 sem NgModules para reduzir boilerplate e melhorar tree-shaking.
-
-4. **Lazy Loading**: Todas as features são carregadas sob demanda para otimizar bundle inicial.
-
-5. **SessionStorage**: Tokens armazenados em sessionStorage (limpa ao fechar aba) em vez de localStorage por segurança.
-
-6. **Docker Multi-stage**: Build separado do runtime para reduzir tamanho da imagem final.
