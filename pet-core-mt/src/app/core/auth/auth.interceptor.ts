@@ -6,21 +6,29 @@ import { AuthFacade } from './auth.facade';
 let isRefreshing = false;
 const refreshTokenSubject = new BehaviorSubject<string | null>(null);
 
+function hasValidRefresh(state: { refreshToken: string | null; refreshExpiresAt: number | null }): boolean {
+  if (!state.refreshToken) return false;
+  if (state.refreshExpiresAt && state.refreshExpiresAt < Date.now()) return false;
+  return true;
+}
+
 export const authInterceptor: HttpInterceptorFn = (req, next): Observable<HttpEvent<unknown>> => {
   const authFacade = inject(AuthFacade);
   const token = authFacade.accessToken;
+  const state = authFacade.currentState;
 
-  if (!token && !req.url.includes('/autenticacao/')) {
-    authFacade.logout();
-    return throwError(() => new Error('No valid token available'));
-  }
-
-  if (token && !req.url.includes('/autenticacao/')) {
-    req = req.clone({
-      setHeaders: {
-        Authorization: `Bearer ${token}`
-      }
-    });
+  if (!req.url.includes('/autenticacao/')) {
+    if (!token && !hasValidRefresh(state)) {
+      authFacade.logout();
+      return throwError(() => new Error('No valid token available'));
+    }
+    if (token) {
+      req = req.clone({
+        setHeaders: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+    }
   }
 
   return next(req).pipe(
