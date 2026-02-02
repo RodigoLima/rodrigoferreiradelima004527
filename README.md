@@ -83,7 +83,7 @@ cd pet-core-mt
 npm run build
 ```
 
-**Container (todas as dependências isoladas):** imagem final só com Nginx + estáticos. Build multi-stage: estágio 1 usa Node para build; estágio 2 usa apenas `nginx:alpine` + os arquivos gerados.
+**Container:** imagem final só com Nginx + estáticos (multi-stage: Node build → `nginx:alpine`). O frontend chama a API via `apiBaseUrl` do build (ex.: `https://pet-manager-api.geia.vip`); não é necessário backend na mesma rede.
 
 ```bash
 cd pet-core-mt
