@@ -60,6 +60,10 @@ A aplicação **não sobe** a API; ela consome o backend na URL acima. Ajuste es
 4. Acessar no navegador: **http://localhost:4200**  
    (após o login, a rota inicial é `/pets`.)
 
+**Credenciais para testes e validação:**  
+- **Usuário:** `admin`  
+- **Senha:** `admin`
+
 ---
 
 ## Como executar os testes
